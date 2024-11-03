@@ -1,0 +1,10 @@
+# @package _global_
+benchmark_id: SynthACticBench
+problem_id: RelevantParameters-1
+problem:
+  _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
+  function:
+    _target_: synthacticbench.functions.RelevantParameters
+    relevant_params: 2
+    noisy_params: 2
+    seed: 52

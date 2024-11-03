@@ -1,5 +1,5 @@
 [project]
-name = "OptBench"
+name = "SythACticBench"
 version = "0.1.0"
 dependencies = [
   "typing_extensions", # Better typing

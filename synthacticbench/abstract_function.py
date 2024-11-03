@@ -9,19 +9,8 @@ from carps.utils.trials import TrialInfo, TrialValue
 from carps.loggers.abstract_logger import AbstractLogger
 
 class AbstractFunction(Problem):
-    def __init__(self, dim: int, lower_bounds: list[float], upper_bounds: list[float], seed: int | None = None, loggers: list[AbstractLogger] | None = None) -> None:
+    def __init__(self, seed: int | None = None, loggers: list[AbstractLogger] | None = None) -> None:
         super().__init__()
-
-        self.dim = dim
-        self.lower_bounds = lower_bounds
-        self.upper_bounds = upper_bounds
-
-        # Uniform Float Hyperparameters
-        space = {f"x_{i}": (self.lower_bounds[i], self.upper_bounds[i]) for i in range(dim)}
-        self._configspace = ConfigurationSpace(
-            space=space,
-            seed=seed
-        )
 
     @property
     def configspace(self) -> ConfigurationSpace:
@@ -48,3 +37,5 @@ class AbstractFunction(Problem):
             Else, return None.
         """
         return None
+    
+    
