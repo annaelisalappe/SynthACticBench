@@ -9,8 +9,10 @@ from carps.utils.trials import TrialInfo, TrialValue
 from carps.loggers.abstract_logger import AbstractLogger
 
 class AbstractFunction(Problem):
-    def __init__(self, seed: int | None = None, loggers: list[AbstractLogger] | None = None) -> None:
+    def __init__(self, seed: int, dim: int| None = None, loggers: list[AbstractLogger] | None = None) -> None:
         super().__init__()
+        self.seed = seed
+        self.dim = dim
 
     @property
     def configspace(self) -> ConfigurationSpace:
@@ -22,8 +24,7 @@ class AbstractFunction(Problem):
         cost = self._function(x=x)
         return TrialValue(cost=cost)
 
-    @abstractmethod
-    def _function(x: np.ndarray) -> float:
+    def _function(self, x: np.ndarray) -> np.ndarray:
         ...
 
     @property
@@ -37,5 +38,4 @@ class AbstractFunction(Problem):
             Else, return None.
         """
         return None
-    
-    
+
