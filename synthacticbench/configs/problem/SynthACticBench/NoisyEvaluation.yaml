@@ -1,0 +1,13 @@
+# @package _global_
+benchmark_id: SynthACticBench
+problem_id: NoisyEvaluation-1
+problem:
+  _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
+  function:
+    _target_: synthacticbench.functions.NoisyEvaluation
+    dim: 10
+    seed: 52
+    name: rosenbrock
+    distribution: normal
+    mean: 0
+    stddev: 1

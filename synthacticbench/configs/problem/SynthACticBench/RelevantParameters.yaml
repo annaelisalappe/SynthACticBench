@@ -5,6 +5,7 @@ problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
     _target_: synthacticbench.functions.RelevantParameters
+    dim: 4
     relevant_params: 2
     noisy_params: 2
     seed: 52
