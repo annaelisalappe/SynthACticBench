@@ -7,7 +7,6 @@ problem:
     _target_: synthacticbench.functions.NoisyEvaluation
     dim: 10
     seed: 52
-    name: rosenbrock
     distribution: normal
     mean: 0
     stddev: 1

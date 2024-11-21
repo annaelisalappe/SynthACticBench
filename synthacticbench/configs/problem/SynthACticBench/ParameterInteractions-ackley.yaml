@@ -1,10 +1,10 @@
 # @package _global_
 benchmark_id: SynthACticBench
-problem_id: RelevantParameters-1
+problem_id: InvalidParametrisation-1
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.RelevantParameters
-    dim: 4
-    num_quadratic: 2
+    _target_: synthacticbench.functions.ParameterInteractions
+    dim: 10
+    name: ackley
     seed: 52

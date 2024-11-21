@@ -5,7 +5,6 @@ problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
     _target_: synthacticbench.functions.InvalidParametrisation
-    name: Rosenbrock
     dim: 10
     cube_size: 0.2
     seed: 52
