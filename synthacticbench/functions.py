@@ -35,22 +35,23 @@ class RelevantParameters(AbstractFunction):
 
     def _create_config_space(self):
         quadr_space = self.instance._create_config_space()
-        noisy_space = ConfigurationSpace(
-            {
-                f"n_{i}": Float(
-                    bounds=(self.instance.lower_bound, self.instance.upper_bound),
-                    default=0,
-                    name=f"n_{i}",
-                )
-                for i in range(self.num_noisy)
-            },
-            seed=self.seed,
-        )
-        return quadr_space.add_configuration_space(
+
+        quadr_space.add_configuration_space(
+            configuration_space=ConfigurationSpace(
+                {
+                    f"n_{i}": Float(
+                        bounds=(self.instance.lower_bound, self.instance.upper_bound),
+                        default=0,
+                        name=f"n_{i}",
+                    )
+                    for i in range(self.num_noisy)
+                },
+                seed=self.seed,
+            ),
             prefix="",
-            configuration_space=noisy_space,
             delimiter="",
         )
+        return quadr_space
 
     # def _create_config_space(self):
     #     domain_sizes = [1, 100, 10000] * ceil(self.total_params / 3)
@@ -73,14 +74,11 @@ class RelevantParameters(AbstractFunction):
 
     #     return ConfigurationSpace(name="RPspace", space=parameters)
 
-    def _create_noisy_functions(self):
-        self.noise_generators = self.rng.spawn(self.num_noisy)
-
-    def _function(self, x: ndarray) -> ndarray:
+    def _function(self, x: ndarray) -> float:
         quadr_sum = self.instance._function(x[: self.num_quadratic])
         noisy_sum = sum(self.noisy_functions.uniform(size=self.num_noisy))
 
-        return np.array(quadr_sum + noisy_sum)
+        return quadr_sum + noisy_sum
 
     @property
     def x_min(self):
@@ -90,9 +88,9 @@ class RelevantParameters(AbstractFunction):
         return np.concatenate((x_mins_quadr, x_mins_noisy), axis=0)
 
     @property
-    def f_min(self):
+    def f_min(self) -> float:
         # Noisy params have their min at 0.0
-        return self.instance.x_min
+        return self.instance.f_min
 
 
 class ParameterInteractions(AbstractFunction):
@@ -141,35 +139,37 @@ class InvalidParametrisation(AbstractFunction):
 
         self._configspace = self.instance._create_config_space()
 
-        self.cube, self.cube_dim = self._make_hypercube(cube_size)
+        self.cube, self.cube_side = self._make_hypercube(cube_size)
 
     def _make_hypercube(self, cube_size):
         lower_bound = self.instance.lower_bound
         upper_bound = self.instance.upper_bound
 
-        cube_dim = (abs(lower_bound) + abs(upper_bound)) * cube_size
+        cube_side = (abs(lower_bound) + abs(upper_bound)) * cube_size
         cube = np.array(
-            self.rng.integers(
-                low=lower_bound, high=floor(upper_bound - cube_dim), size=self.dim
+            self.rng.uniform(
+                low=lower_bound, high=(upper_bound - cube_side), size=self.dim
             )
         )
-        return cube, cube_dim
+        return cube, cube_side
 
-    def _function(self, x: np.ndarray) -> np.ndarray:
+    def _function(self, x: np.ndarray) -> float:
         invalid = self._check_hypercube(x=x)
         if invalid:
-            err_message = f"Received invalid parameter value for"
+            err_message = f"Received invalid parameter value for "
             for i in invalid:
-                err_message.append(f"x_{i}: {x[i]} ")
-            raise Exception(err_message)
+                err_message += f"x_{i}: {x[i]}, "
+            raise Exception(err_message[:-1])
         else:
             return self.instance._function(x)
 
     def _check_hypercube(self, x: np.ndarray):
         invalid = []
         for i in range(len(x)):
-            if self.cube[i] <= x[i] < self.cube[i] + self.cube_dim:
+            if self.cube[i] <= x[i] < self.cube[i] + self.cube_side:
                 invalid.append(i)
+        print(invalid)
+        return invalid
 
     # TODO: Is this okay?
     @property
@@ -182,7 +182,7 @@ class InvalidParametrisation(AbstractFunction):
 
     # TODO: Is this okay?
     @property
-    def f_min(self):
+    def f_min(self) -> float:
         return self.instance.f_min
 
 
@@ -224,7 +224,7 @@ class NoisyEvaluation(AbstractFunction):
         else:
             raise ValueError("Unsupported distribution type")
 
-    def _function(self, x: np.ndarray) -> np.ndarray:
+    def _function(self, x: np.ndarray) -> float:
         base_value = self.instance._function(x)
         return base_value + self.noise_generator()
 
@@ -233,7 +233,7 @@ class NoisyEvaluation(AbstractFunction):
         return self.instance.x_min
 
     @property
-    def f_min(self):
+    def f_min(self) -> float:
         return self.instance.f_min
 
 

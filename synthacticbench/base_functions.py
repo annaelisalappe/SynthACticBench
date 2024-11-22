@@ -258,7 +258,7 @@ class SumOfQ(AbstractFunction):
     def upper_bound(self) -> int | float:
         return 100
 
-    def _function(self, x: np.ndarray) -> np.ndarray:
+    def _function(self, x: np.ndarray) -> float:
         a, b, c = (
             self.coefficients[:, 0],
             self.coefficients[:, 1],

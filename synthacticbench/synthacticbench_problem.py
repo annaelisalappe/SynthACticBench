@@ -12,9 +12,10 @@ if TYPE_CHECKING:
     from carps.loggers.abstract_logger import AbstractLogger
 
 
-
 class SynthACticBenchProblem(Problem):
-    def __init__(self, function: AbstractFunction, loggers: list[AbstractLogger] | None = None) -> None:
+    def __init__(
+        self, function: AbstractFunction, loggers: list[AbstractLogger] | None = None
+    ) -> None:
         super().__init__(loggers=loggers)
 
         self.function = function
