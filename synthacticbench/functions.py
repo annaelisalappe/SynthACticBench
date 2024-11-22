@@ -366,3 +366,64 @@ class ActivationStructures(AbstractFunction):
     @property
     def f_min(self) -> float:
         return self._function(self.x_min)
+
+
+class SinglePeak(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        peak_width: float,
+        loggers: list | None = None,
+        seed: int | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+
+        self.peak_width = peak_width
+        self.rng = np.random.default_rng(seed=seed)
+        self.lower_ends, self.abs_peak_width = self._make_peak()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "o7"
+
+    def _create_config_space(self):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(self.lower_bound, self.upper_bound),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _make_peak(self):
+        abs_peak_width = (abs(self.lower_bound) + abs(self.upper_bound)) * self.peak_width
+        lower_ends = self.rng.uniform(
+            low=self.lower_bound, high=(self.upper_bound - abs_peak_width), size=self.dim
+        )
+        return lower_ends, abs_peak_width
+
+    @property
+    def lower_bound(self) -> int | float:
+        return -100
+
+    @property
+    def upper_bound(self) -> int | float:
+        return 100
+
+    def _function(self, x: np.ndarray) -> float:
+        if np.all((self.lower_ends <= x) and (x < self.lower_ends + self.abs_peak_width)):
+            return 0.0
+        else:
+            return 1.0
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        # TODO
+
+    @property
+    def f_min(self) -> float:
+        return 0.0
