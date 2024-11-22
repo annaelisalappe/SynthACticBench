@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from math import floor
+import math
 
 import numpy as np
 from carps.loggers.abstract_logger import AbstractLogger
-from ConfigSpace import ConfigurationSpace, Float
+from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float
 from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
@@ -280,3 +280,89 @@ class MultipleObjectives(AbstractFunction):
     @property
     def f_min(self):
         return self.instance.f_min
+
+
+class ActivationStructures(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        groups: int,
+        loggers: list | None = None,
+        seed: int | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+
+        self._x_min = None
+        self.groups = groups
+        self.rng = np.random.default_rng(seed=seed)
+
+        self.instances = self._make_groups()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "c4"
+
+    def _create_config_space(self):
+        configuration_space = ConfigurationSpace()
+
+        for cat, instance in self.instances.items():
+            function = instance["function"]
+
+            configuration_space.add_configuration_space(
+                configuration_space=function._create_config_space(),
+                prefix=cat,
+                delimiter=":",
+            )
+        configuration_space.add(
+            CategoricalHyperparameter(
+                name="c", choices=range(self.groups), default_value=0
+            )
+        )
+        return configuration_space
+
+    def _make_groups(self):
+        instances = {}
+        x_i = 0
+
+        min_group_size = self.dim // self.groups
+        remainder = self.dim % self.groups
+        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+            self.groups - remainder
+        )
+        group_seeds = self.rng.integers(low=0, high=1000, size=self.groups)
+
+        for i in range(self.groups):
+            instances[i] = {
+                "function": SumOfQ(seed=group_seeds[i], dim=group_dims[i]),
+                "starts_at": x_i,
+            }
+            x_i += group_dims[i]
+
+        return instances
+
+    def _function(self, x: np.ndarray) -> float:
+        cat = x[-1]
+        instance = self.instances[cat]["function"]
+        starts_at = self.instances[cat]["starts_at"]
+        x = x[starts_at : starts_at + instance.dim]
+
+        return instance._function(x)
+
+    def _calculate_x_min(self):
+        current_best_f = math.inf
+
+        for cat, func in self.instances.items():
+            if func["function"].f_min < current_best_f:
+                x_min = (func["function"].x_min).append(cat)
+        self._x_min = x_min
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        if self._x_min is not None:
+            self._calculate_x_min()
+
+        return self._x_min
+
+    @property
+    def f_min(self) -> float:
+        return self._function(self.x_min)
