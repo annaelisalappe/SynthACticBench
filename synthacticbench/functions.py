@@ -122,7 +122,7 @@ class ParameterInteractions(AbstractFunction):
         return self.instance.f_min
 
 
-class InvalidParametrisation(AbstractFunction):
+class InvalidParameterization(AbstractFunction):
     def __init__(
         self,
         dim: int,
