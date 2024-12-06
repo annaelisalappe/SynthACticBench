@@ -1,23 +1,10 @@
 [project]
 name = "SythACticBench"
 version = "0.1.0"
-dependencies = [
-  "typing_extensions", # Better typing
-  "tomli", 
-  "pre-commit", 
-  "ConfigSpace",
-  "carps",
-  "setuptools",
-  "pytest",
-  "coverage",
-  "ruff",
-  "mypy",
-]
-
+description = "A synthetic benchmarking tool to evaluate capabilities of AC algorithms"
 requires-python = ">=3.10"
-authors = [{ name = "Carolin Benjamins", email =  "c.benjamins@ai.uni-hannover.de" }]
+authors = []
 readme = "README.md"
-description = "Optimization tasks"
 classifiers = [
   'Intended Audience :: Science/Research',
   'Intended Audience :: Developers',
@@ -31,13 +18,17 @@ classifiers = [
 ]
 license = { file = "LICENSE" }
 
+dependencies = [
+  "typing_extensions", # Better typing
+  "tomli",  
+  "ConfigSpace",
+  "carps",
+  "setuptools",
+]
+
 [project.optional-dependencies]
-dev = ["OptBench[doc, tooling, test, examples]"]
-tooling = ["commitizen", "pre-commit", "ruff"]
-
-test = ["pytest", "pytest-coverage", "pytest-cases", "OptBench[examples]"]
-examples = []
-
+dev = ["pytest"]
+tooling = ["pre-commit", "ruff", "mypy"]
 
 # https://docs.pytest.org/en/7.2.x/reference/reference.html#ini-options-ref
 [tool.pytest.ini_options]
@@ -48,40 +39,14 @@ log_cli = false
 log_level = "DEBUG"
 xfail_strict = true
 addopts = "--durations=10 -vv"
-markers = ["example: An example"]
-
-
-[tool.coverage.run]
-branch = true
-include = ["optbench"]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = true
-exclude_lines = [
-  "pragma: no cover",
-  '\.\.\.',
-  "raise NotImplementedError",
-  "if TYPE_CHECKING",
-]
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "1.2.0"
-update_changelog_on_bump = true
-version_files = ["pyproject.toml:version"]
-changelog_start_rev = "1.0.0"
 
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
 target-version = "py311"
-line-length = 88
+line-length = 95
 show-source = true
-src = ["src", "tests", "examples", "notebooks", "optbench"]
+src = ["tests", "sythacticbench"]
 extend-safe-fixes = ["ALL"]
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 select = [
   "A",
@@ -200,8 +165,7 @@ exclude = [
 
 
 [tool.ruff.isort]
-known-first-party = ["amltk"]
-known-third-party = ["sklearn"]
+known-first-party = ["sythacticbench"]
 no-lines-before = ["future"]
 required-imports = ["from __future__ import annotations"]
 combine-as-imports = true
@@ -216,8 +180,7 @@ max-args = 10 # Changed from default of 5
 
 [tool.mypy]
 python_version = "3.10"
-packages = ["optbench", "tests"]
-exclude = ["optbench/plotting.py"]
+packages = ["synthacticbench", "tests"]
 show_error_codes = true
 
 warn_unused_configs = true # warn about unused [tool.mypy] lines
@@ -244,15 +207,6 @@ disable_error_code = ["var-annotated"]
 
 [[tool.mypy.overrides]]
 module = [
-  "sklearn.*",
   "ConfigSpace.*",
-  "pandas.*",
-  "more_itertools.*",
-  "dask_jobqueue.*",
-  "wandb.*",
-  "threadpoolctl.*",
-  "loky.*",
-  "metahyper.*",
-  "neps.*",
 ]
 ignore_missing_imports = true
