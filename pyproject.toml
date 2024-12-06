@@ -50,13 +50,12 @@ extend-safe-fixes = ["ALL"]
 
 select = [
   "A",
-  # "ANN", # Handled by mypy
   "ARG",
   "B",
   "BLE",
   "COM",
   "C4",
-  "D",
+  # "D", # this seems a bit too strict for now
   # "DTZ",  # One day I should know how to utilize timezones and dates...
   "E",
   # "EXE", Meh
