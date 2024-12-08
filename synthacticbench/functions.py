@@ -39,7 +39,7 @@ class RelevantParameters(AbstractFunction):
             configuration_space=ConfigurationSpace(
                 {
                     f"n_{i}": Float(
-                        bounds=(self.instance.lower_bound, self.instance.upper_bound),
+                        bounds=(-100, 100),
                         default=0,
                         name=f"n_{i}",
                     )
@@ -51,27 +51,6 @@ class RelevantParameters(AbstractFunction):
             delimiter="",
         )
         return quadr_space
-
-    # def _create_config_space(self):
-    #     domain_sizes = [1, 100, 10000] * ceil(self.total_params / 3)
-    #     lower_bounds = self.rng.integers(low=-10000, high=9000, size=self.total_params)
-
-    #     parameters = []
-    #     for i in range(self.total_params):
-    #         bounds = (lower_bounds[i], lower_bounds[i] + domain_sizes[i])
-
-    #         if i < self.relevant_params:
-    #             name = f"quadratic_parameter_{i}"
-    #         else:
-    #             name = f"noisy_parameter_{i}"
-
-    #         param = Float(
-    #             name,
-    #             bounds,  # TODO: Does there have to be a default value?
-    #         )
-    #         parameters.append(param)
-
-    #     return ConfigurationSpace(name="RPspace", space=parameters)
 
     def _function(self, x: ndarray) -> float:
         quadr_sum = self.instance._function(x[: self.num_quadratic])
@@ -89,6 +68,55 @@ class RelevantParameters(AbstractFunction):
     @property
     def f_min(self) -> float:
         # Noisy params have their min at 0.0
+        return self.instance.f_min
+
+
+class MixedDomains(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+
+        self.rng = np.random.default_rng(seed=seed)
+
+        lower_bounds = [-1] * math.ceil(self.dim / 2) + [-10000] * (self.dim // 2)
+        upper_bounds = [-b for b in lower_bounds]
+        self.instance = SumOfQ(
+            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
+        )
+
+        self._configspace = self._create_config_space()
+
+        self.benchmark_name = "c8"
+
+    def _create_config_space(self):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(
+                        self.instance.lower_bounds[i],
+                        self.instance.upper_bounds[i],
+                    ),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _function(self, x: ndarray) -> float:
+        return self.instance._function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        return self.instance.x_min
+
+    @property
+    def f_min(self) -> float:
         return self.instance.f_min
 
 
@@ -141,12 +169,15 @@ class InvalidParameterization(AbstractFunction):
         self.cube, self.cube_side = self._make_hypercube(cube_size)
 
     def _make_hypercube(self, cube_size):
-        lower_bound = self.instance.lower_bound
-        upper_bound = self.instance.upper_bound
-
-        cube_side = (abs(lower_bound) + abs(upper_bound)) * cube_size
+        cube_side = (
+            abs(self.instance.lower_bounds) + abs(self.instance.upper_bounds)
+        ) * cube_size
         cube = np.array(
-            self.rng.uniform(low=lower_bound, high=(upper_bound - cube_side), size=self.dim)
+            self.rng.uniform(
+                low=self.instance.lower_bounds,
+                high=(self.instance.upper_bounds - cube_side),
+                size=self.dim,
+            )
         )
         return cube, cube_side
 
@@ -372,9 +403,10 @@ class SinglePeak(AbstractFunction):
         seed: int | None = None,
     ) -> None:
         super().__init__(seed, dim, loggers)
-
-        self.peak_width = peak_width
         self.rng = np.random.default_rng(seed=seed)
+        self.lower_bound = -100
+        self.upper_bound = 100
+        self.peak_width = peak_width
         self.lower_ends, self.abs_peak_width = self._make_peak()
 
         self._configspace = self._create_config_space()
@@ -402,16 +434,8 @@ class SinglePeak(AbstractFunction):
         )
         return lower_ends, abs_peak_width
 
-    @property
-    def lower_bound(self) -> int | float:
-        return -100
-
-    @property
-    def upper_bound(self) -> int | float:
-        return 100
-
     def _function(self, x: np.ndarray) -> float:
-        if np.all((self.lower_ends <= x) and (x < self.lower_ends + self.abs_peak_width)):
+        if np.all((self.lower_ends <= x) & (x < self.lower_ends + self.abs_peak_width)):
             return 0.0
 
         return 1.0

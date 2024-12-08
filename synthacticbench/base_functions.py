@@ -15,16 +15,17 @@ class Rosenbrock(AbstractFunction):
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
         super().__init__(seed, dim, loggers)
-
+        self.lower_bounds = [-5] * self.dim
+        self.upper_bounds = [10] * self.dim
         self._make_coefficients()
 
     def _create_config_space(self):
-        lower_bounds = [self.lower_bound] * self.dim
-        upper_bounds = [self.upper_bound] * self.dim
         return ConfigurationSpace(
             {
                 f"x_{i}": Float(
-                    bounds=(lower_bounds[i], upper_bounds[i]), default=0, name=f"x_{i}"
+                    bounds=(self.lower_bounds[i], self.upper_bounds[i]),
+                    default=0,
+                    name=f"x_{i}",
                 )
                 for i in range(self.dim)
             },
@@ -38,14 +39,6 @@ class Rosenbrock(AbstractFunction):
     @property
     def f_min(self) -> float | None:
         return 0.0
-
-    @property
-    def lower_bound(self) -> int | float:
-        return -5
-
-    @property
-    def upper_bound(self) -> int | float:
-        return 10
 
     def _make_coefficients(self) -> np.ndarray:
         generator = np.random.default_rng(seed=self.seed)
@@ -74,15 +67,17 @@ class Ackley(AbstractFunction):
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
         super().__init__(seed, dim, loggers)
+        self.lower_bounds = [-32.768] * self.dim
+        self.upper_bounds = [32.768] * self.dim
         self._make_coefficients()
 
     def _create_config_space(self):
-        lower_bounds = [self.lower_bound] * self.dim
-        upper_bounds = [self.upper_bound] * self.dim
         return ConfigurationSpace(
             {
                 f"x_{i}": Float(
-                    bounds=(lower_bounds[i], upper_bounds[i]), default=0, name=f"x_{i}"
+                    bounds=(self.lower_bounds[i], self.upper_bounds[i]),
+                    default=0,
+                    name=f"x_{i}",
                 )
                 for i in range(self.dim)
             },
@@ -101,14 +96,6 @@ class Ackley(AbstractFunction):
     @property
     def f_min(self) -> float | None:
         return 0.0
-
-    @property
-    def lower_bound(self) -> int | float:
-        return -32.768
-
-    @property
-    def upper_bound(self) -> int | float:
-        return 32.768
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         if self.dim == 1:
@@ -218,19 +205,23 @@ class SumOfQ(AbstractFunction):
         self,
         seed: int,
         dim: int | None = None,
+        lower_bounds: list[float] | None = None,
+        upper_bounds: list[float] | None = None,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
         super().__init__(seed, dim, loggers)
-
+        self.lower_bounds = lower_bounds or [-100] * self.dim
+        self.upper_bounds = upper_bounds or [100] * self.dim
+        print(f"Lower bound: {self.lower_bounds[0]}, {len(self.lower_bounds)}")
         self._make_coefficients()
 
     def _create_config_space(self):
-        lower_bounds = [self.lower_bound] * self.dim
-        upper_bounds = [self.upper_bound] * self.dim
         return ConfigurationSpace(
             {
                 f"x_{i}": Float(
-                    bounds=(lower_bounds[i], upper_bounds[i]), default=0, name=f"x_{i}"
+                    bounds=(self.lower_bounds[i], self.upper_bounds[i]),
+                    default=0,
+                    name=f"x_{i}",
                 )
                 for i in range(self.dim)
             },
@@ -268,14 +259,6 @@ class SumOfQ(AbstractFunction):
     def f_min(self) -> float | None:
         x_min_values = self.x_min()
         return self._function(x_min_values)
-
-    @property
-    def lower_bound(self) -> int | float:
-        return -100
-
-    @property
-    def upper_bound(self) -> int | float:
-        return 100
 
     def _function(self, x: np.ndarray) -> float:
         a, b, c = (
