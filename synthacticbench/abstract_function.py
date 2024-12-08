@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from abc import abstractmethod
-
 import numpy as np
-from ConfigSpace import ConfigurationSpace
 from carps.benchmarks.problem import Problem
-from carps.utils.trials import TrialInfo, TrialValue
 from carps.loggers.abstract_logger import AbstractLogger
+from carps.utils.trials import TrialInfo, TrialValue
+from ConfigSpace import ConfigurationSpace
+
 
 class AbstractFunction(Problem):
-    def __init__(self, seed: int, dim: int| None = None, loggers: list[AbstractLogger] | None = None) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        seed: int,
+        dim: int | None = None,
+        loggers: list[AbstractLogger] | None = None,
+    ) -> None:
+        super().__init__(loggers=loggers)
         self.seed = seed
         self.dim = dim
 
@@ -38,4 +42,3 @@ class AbstractFunction(Problem):
             Else, return None.
         """
         return None
-

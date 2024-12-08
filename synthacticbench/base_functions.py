@@ -52,7 +52,6 @@ class Rosenbrock(AbstractFunction):
 
         self.coefficients = generator.uniform(low=0, high=10, size=(1, 2))
 
-
     def _function(self, x: np.ndarray) -> np.ndarray:
         x = np.atleast_2d(x) if self.dim > 1 else x
         totals = np.zeros(x.shape[0])
@@ -60,7 +59,9 @@ class Rosenbrock(AbstractFunction):
             totals = (1 - x) ** 2  # Simplified 1D Rosenbrock function
         else:
             for i in range(self.dim - 1):
-                totals += self.coefficients[0] * (100 * (x[:, i + 1] - x[:, i] ** 2) ** 2 + (1 - x[:, i]) ** 2)
+                totals += self.coefficients[0] * (
+                    100 * (x[:, i + 1] - x[:, i] ** 2) ** 2 + (1 - x[:, i]) ** 2
+                )
 
         return self.coefficients[1] * totals
 
@@ -93,7 +94,6 @@ class Ackley(AbstractFunction):
 
         self.coefficients = generator.uniform(low=0, high=10, size=(1, 1))
 
-
     @property
     def x_min(self) -> np.ndarray | None:
         return np.zeros(self.dim)
@@ -113,9 +113,8 @@ class Ackley(AbstractFunction):
     def _function(self, x: np.ndarray) -> np.ndarray:
         if self.dim == 1:
             x = np.expand_dims(x, axis=1)
-        else:
-            if x.ndim == 1:
-                x = np.expand_dims(x, axis=0)
+        elif x.ndim == 1:
+            x = np.expand_dims(x, axis=0)
 
         part1 = -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2, axis=1) / self.dim))
         part2 = -np.exp(np.sum(np.cos(2 * np.pi * x), axis=1) / self.dim)

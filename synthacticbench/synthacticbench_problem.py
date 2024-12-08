@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from carps.benchmarks.problem import Problem
+from carps.loggers.abstract_logger import AbstractLogger
+from carps.utils.trials import TrialInfo, TrialValue
+from ConfigSpace import ConfigurationSpace
 
-if TYPE_CHECKING:
-    from ConfigSpace import ConfigurationSpace
-    from carps.utils.trials import TrialInfo, TrialValue
-
-    from synthacticbench.abstract_function import AbstractFunction
-    from carps.loggers.abstract_logger import AbstractLogger
+from synthacticbench.abstract_function import AbstractFunction
 
 
 class SynthACticBenchProblem(Problem):

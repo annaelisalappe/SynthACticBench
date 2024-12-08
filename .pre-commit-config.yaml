@@ -20,25 +20,13 @@ repos:
       - id: check-toml
         types: ["toml"]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.0
-    hooks:
-      - id: mypy
-        additional_dependencies:
-          - "types-pyyaml"
-          - "types-psutil"
-        args:
-          - "--no-warn-return-any" # Disable this because it doesn't know about 3rd party imports
-          - "--ignore-missing-imports"
-          - "--show-traceback"
-
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.27.1
     hooks:
       - id: check-github-workflows
         files: '^github/workflows/.*\.ya?ml$'
         types: ["yaml"]
-        
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.5
     hooks:

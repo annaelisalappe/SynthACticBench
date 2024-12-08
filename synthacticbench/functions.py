@@ -3,12 +3,11 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from carps.loggers.abstract_logger import AbstractLogger
 from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float
 from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
-from synthacticbench.base_functions import Ackley, Rosenbrock, SumOfQ
+from synthacticbench.base_functions import ZDT1, ZDT3, Ackley, Rosenbrock, SumOfQ
 
 
 class RelevantParameters(AbstractFunction):
@@ -147,21 +146,20 @@ class InvalidParameterization(AbstractFunction):
 
         cube_side = (abs(lower_bound) + abs(upper_bound)) * cube_size
         cube = np.array(
-            self.rng.uniform(
-                low=lower_bound, high=(upper_bound - cube_side), size=self.dim
-            )
+            self.rng.uniform(low=lower_bound, high=(upper_bound - cube_side), size=self.dim)
         )
         return cube, cube_side
 
     def _function(self, x: np.ndarray) -> float:
         invalid = self._check_hypercube(x=x)
-        if invalid:
-            err_message = f"Received invalid parameter value for "
-            for i in invalid:
-                err_message += f"x_{i}: {x[i]}, "
-            raise Exception(err_message[:-1])
-        else:
+        if not invalid:
             return self.instance._function(x)
+
+        err_message = "Received invalid parameter value for "
+        for i in invalid:
+            err_message += f"x_{i}: {x[i]}, "
+
+        raise Exception(err_message[:-1])
 
     def _check_hypercube(self, x: np.ndarray):
         invalid = []
@@ -213,16 +211,16 @@ class NoisyEvaluation(AbstractFunction):
             stddev = kwargs.get("stddev", 1)
             return lambda: self.rng.normal(mean, stddev)
 
-        elif distribution == "uniform":
+        if distribution == "uniform":
             low = kwargs.get("low", -1)
             high = kwargs.get("high", 1)
             return lambda: self.rng.uniform(low, high)
 
-        elif distribution == "exponential":
+        if distribution == "exponential":
             lambd = kwargs.get("lambd", 1)
             return lambda: self.rng.exponential(1 / lambd)
-        else:
-            raise ValueError("Unsupported distribution type")
+
+        raise ValueError("Unsupported distribution type")
 
     def _function(self, x: np.ndarray) -> float:
         base_value = self.instance._function(x)
@@ -289,7 +287,6 @@ class ActivationStructures(AbstractFunction):
         groups: int,
         loggers: list | None = None,
         seed: int | None = None,
-        **kwargs,
     ) -> None:
         super().__init__(seed, dim, loggers)
 
@@ -314,9 +311,7 @@ class ActivationStructures(AbstractFunction):
                 delimiter=":",
             )
         configuration_space.add(
-            CategoricalHyperparameter(
-                name="c", choices=range(self.groups), default_value=0
-            )
+            CategoricalHyperparameter(name="c", choices=range(self.groups), default_value=0)
         )
         return configuration_space
 
@@ -375,7 +370,6 @@ class SinglePeak(AbstractFunction):
         peak_width: float,
         loggers: list | None = None,
         seed: int | None = None,
-        **kwargs,
     ) -> None:
         super().__init__(seed, dim, loggers)
 
@@ -402,7 +396,9 @@ class SinglePeak(AbstractFunction):
     def _make_peak(self):
         abs_peak_width = (abs(self.lower_bound) + abs(self.upper_bound)) * self.peak_width
         lower_ends = self.rng.uniform(
-            low=self.lower_bound, high=(self.upper_bound - abs_peak_width), size=self.dim
+            low=self.lower_bound,
+            high=(self.upper_bound - abs_peak_width),
+            size=self.dim,
         )
         return lower_ends, abs_peak_width
 
@@ -417,12 +413,13 @@ class SinglePeak(AbstractFunction):
     def _function(self, x: np.ndarray) -> float:
         if np.all((self.lower_ends <= x) and (x < self.lower_ends + self.abs_peak_width)):
             return 0.0
-        else:
-            return 1.0
+
+        return 1.0
 
     @property
     def x_min(self) -> np.ndarray | None:
         # TODO
+        pass
 
     @property
     def f_min(self) -> float:
