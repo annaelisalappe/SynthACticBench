@@ -448,3 +448,65 @@ class SinglePeak(AbstractFunction):
     @property
     def f_min(self) -> float:
         return 0.0
+
+
+class ShiftingDomains(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.benchmark_name = "c5"
+        self.rng = np.random.default_rng(seed=seed)
+
+        assert self.dim > 1, "Dimension has to be larger than one in this problem"
+
+        lower_bounds = [-100].append([0] * (self.dim - 1))
+        upper_bounds = [100].append([200] * (self.dim - 1))
+
+        self.instance = SumOfQ(seed=seed, dim=dim)
+        self.instance_shifted_domains = SumOfQ(
+            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
+        )
+
+        self._configspace = self._create_config_space(instance=self.instance)
+        self._configspace_shifted_domains = self._create_config_space(
+            instance=self.instance_shifted_domains
+        )
+
+    def _create_config_space(self, instance: SumOfQ):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(
+                        instance.lower_bounds[i],
+                        instance.upper_bounds[i],
+                    ),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _function(self, x: ndarray) -> float:
+        # Check the value of x0
+        if x[0] < 0:
+            return self.instance._function(x=x)
+
+        # Domains have shifted! Use shifted domains function
+        self._configspace = self._configspace_shifted_domains
+        return self.instance_shifted_domains._function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        if self.instance.f_min <= self.instance_shifted_domains.f_min:
+            return self.instance.x_min
+        return self.instance_shifted_domains.x_min
+
+    @property
+    def f_min(self) -> float:
+        return min(self.instance.f_min, self.instance_shifted_domains.f_min)
