@@ -510,3 +510,46 @@ class ShiftingDomains(AbstractFunction):
     @property
     def f_min(self) -> float:
         return min(self.instance.f_min, self.instance_shifted_domains.f_min)
+
+
+class CensoredObjective(AbstractFunction):
+    """
+    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
+    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
+    bounds can be observed for configurations hitting the timeout.
+
+    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
+    """
+    def __init__(
+        self,
+        cutoff: float,
+        wrapped_bench: AbstractFunction):
+        """
+        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
+        The cutoff is determined relative to the wrapped function's optimum.
+        wrapped_bench: another benchmark function that is wrapped into this one.
+        """
+        self.cutoff = cutoff
+        self.wrapped_bench = wrapped_bench
+        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+
+    def _create_config_space(self, instance: SumOfQ):
+        return self.wrapped_bench._create_config_space(instance=instance)
+
+    def _function(self, x: ndarray) -> float:
+        f_eval = self.wrapped_bench._function(x=x)
+
+        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
+        # function value to indicate that the evaluation was not successful
+        if f_eval >= self.f_min * (1+self.cutoff):
+            return float("inf")
+
+        return f_eval
+
+    @property
+    def x_min(self) ->np.ndarray | None:
+        return self.wrapped_bench.x_min
+
+    @property
+    def f_min(self) -> float:
+        return self.wrapped_bench.f_min
