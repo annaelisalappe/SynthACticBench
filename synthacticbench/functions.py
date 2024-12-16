@@ -342,7 +342,9 @@ class ActivationStructures(AbstractFunction):
                 delimiter=":",
             )
         configuration_space.add(
-            CategoricalHyperparameter(name="c", choices=range(self.groups), default_value=0)
+            CategoricalHyperparameter(
+                name="c", choices=range(self.groups), default_value=0
+            )
         )
         return configuration_space
 
@@ -426,7 +428,9 @@ class SinglePeak(AbstractFunction):
         )
 
     def _make_peak(self):
-        abs_peak_width = (abs(self.lower_bound) + abs(self.upper_bound)) * self.peak_width
+        abs_peak_width = (
+            abs(self.lower_bound) + abs(self.upper_bound)
+        ) * self.peak_width
         lower_ends = self.rng.uniform(
             low=self.lower_bound,
             high=(self.upper_bound - abs_peak_width),
@@ -463,8 +467,8 @@ class ShiftingDomains(AbstractFunction):
 
         assert self.dim > 1, "Dimension has to be larger than one in this problem"
 
-        lower_bounds = [-100].append([0] * (self.dim - 1))
-        upper_bounds = [100].append([200] * (self.dim - 1))
+        lower_bounds = [-200].append([0] * (self.dim - 1))
+        upper_bounds = [0].append([200] * (self.dim - 1))
 
         self.instance = SumOfQ(seed=seed, dim=dim)
         self.instance_shifted_domains = SumOfQ(
@@ -520,10 +524,8 @@ class CensoredObjective(AbstractFunction):
 
     This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
     """
-    def __init__(
-        self,
-        cutoff: float,
-        wrapped_bench: AbstractFunction):
+
+    def __init__(self, cutoff: float, wrapped_bench: AbstractFunction):
         """
         cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
         The cutoff is determined relative to the wrapped function's optimum.
@@ -541,15 +543,125 @@ class CensoredObjective(AbstractFunction):
 
         # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
         # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1+self.cutoff):
+        if f_eval >= self.f_min * (1 + self.cutoff):
             return float("inf")
 
         return f_eval
 
     @property
-    def x_min(self) ->np.ndarray | None:
+    def x_min(self) -> np.ndarray | None:
         return self.wrapped_bench.x_min
 
     @property
     def f_min(self) -> float:
         return self.wrapped_bench.f_min
+
+
+class TimeDependentOP(AbstractFunction):
+    def __init__(
+        self,
+        name: str,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.benchmark_name = "o4"
+        self.name = name
+        self.rng = np.random.default_rng(seed=seed)
+        self.timer = 0
+
+        self.instance = SumOfQ(seed=self.seed, dim=self.dim)
+        self._configspace = self.instance._create_config_space()
+        self.function = self._set_function()
+
+    def _set_function(self):
+        if self.name == "linear_drift":
+            return self._function_linear_drift
+        if self.name == "oscillations":
+            return self._function_oscillations
+        raise Exception(
+            "Invalid function name provided. "
+            "Must be one of 'linear_drift' or 'oscillations'."
+        )
+
+    def _function_linear_drift(self, x: ndarray) -> float:
+        return self.instance._function(x=x) + (1 + 0.005 * self.timer)
+
+    def _function_oscillations(self, x: ndarray) -> float:
+        return self.instance._function(x=x) + 0.005 * math.sin(1 + self.timer)
+
+    def _function(self, x: ndarray) -> float:
+        return self.function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        # TODO
+        pass
+
+    @property
+    def f_min(self) -> float:
+        # TODO
+        pass
+
+
+class TimeDependentNOP(AbstractFunction):
+    def __init__(
+        self,
+        name: str,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.benchmark_name = "o4"
+        self.name = name
+        self.rng = np.random.default_rng(seed=seed)
+        self.timer = 0
+
+        self._configspace = self._create_config_space()
+        self.function = self._set_function()
+
+    def _create_config_space(self):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(-100, 100),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _set_function(self):
+        if self.name == "linear_drift":
+            return self._function_linear_drift
+        if self.name == "oscillations":
+            return self._function_oscillations
+        raise Exception(
+            "Invalid function name provided. "
+            "Must be one of 'linear_drift' or 'oscillations'."
+        )
+
+    def _function_oscillations(self, x: ndarray) -> float:
+        lmd = 1 + math.sin(0.005 * self.timer)
+        return np.sum((x - lmd) ** 2)
+
+    def _function_linear_drift(self, x: ndarray) -> float:
+        lmd = 1 + 0.005 * self.timer
+        return np.sum((x - lmd) ** 2)
+
+    def _function(self, x: ndarray) -> float:
+        return self.function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        # TODO
+        pass
+
+    @property
+    def f_min(self) -> float:
+        # TODO
+        pass
