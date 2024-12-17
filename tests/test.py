@@ -40,6 +40,8 @@ function_classes = [
         "synthacticbench/configs/problem/SynthACticBench/SinglePeak.yaml",
         "synthacticbench/configs/problem/SynthACticBench/MixedDomains.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ShiftingDomains.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/TimeDependentOP.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/TimeDependentNOP.yaml",
     ],
 )
 def test_instantiate_and_evaluate(path):
@@ -60,6 +62,8 @@ def test_instantiate_and_evaluate(path):
         "synthacticbench/configs/problem/SynthACticBench/SinglePeak.yaml",
         "synthacticbench/configs/problem/SynthACticBench/MixedDomains.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ShiftingDomains.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/TimeDependentOP.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/TimeDependentNOP.yaml",
     ],
 )
 def test_reproducibility(path):
