@@ -1,0 +1,36 @@
+PY_EXPERIMENTER:
+  n_jobs: 1
+
+  Database:
+    provider: mysql
+    database: synthacticbench
+    table:
+      name: jobs
+      keyfields:
+        benchmarklib:
+          type: VARCHAR(255)
+          values: ['jahs']
+        scenario:
+          type: VARCHAR(255)
+          values: ['default']
+        dataset:
+          type: VARCHAR(255)
+          values: ['CIFAR10','ColorectalHistology','FashionMNIST']
+        metric:
+          type: VARCHAR(255)
+          values: ['default']
+        game:
+          type: VARCHAR(255)
+          values: ['data_specific_tunability']
+        argmax_n_configs:
+          type: INT
+          values: [10000]
+        seed:
+          type: INT
+          values: [42]
+      result_timestamps: False
+      resultfields:
+        setup_time: VARCHAR(255)
+        normalization_value: VARCHAR(255)
+        storage_path: VARCHAR(255)
+        done: VARCHAR(50)

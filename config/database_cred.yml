@@ -1,0 +1,7 @@
+CREDENTIALS:
+  Database:
+    user: root
+    password:
+  Connection:
+    Standard:
+      server: localhost
