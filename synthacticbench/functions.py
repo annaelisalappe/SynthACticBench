@@ -7,7 +7,7 @@ from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float
 from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
-from synthacticbench.base_functions import ZDT1, ZDT3, Ackley, Rosenbrock, SumOfQ
+from synthacticbench.base_functions import ZDT1, ZDT3, Griewank, Ackley, Rosenbrock, SumOfQ
 
 
 class RelevantParameters(AbstractFunction):
@@ -71,56 +71,12 @@ class RelevantParameters(AbstractFunction):
         return self.instance.f_min
 
 
-class MixedDomains(AbstractFunction):
-    def __init__(
-        self,
-        dim: int,
-        seed: int | None = None,
-        loggers: list | None = None,
-    ) -> None:
-        super().__init__(seed, dim, loggers)
-
-        self.rng = np.random.default_rng(seed=seed)
-
-        lower_bounds = [-1] * math.ceil(self.dim / 2) + [-10000] * (self.dim // 2)
-        upper_bounds = [-b for b in lower_bounds]
-        self.instance = SumOfQ(
-            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
-        )
-
-        self._configspace = self._create_config_space()
-
-        self.benchmark_name = "c8"
-
-    def _create_config_space(self):
-        return ConfigurationSpace(
-            {
-                f"x_{i}": Float(
-                    bounds=(
-                        self.instance.lower_bounds[i],
-                        self.instance.upper_bounds[i],
-                    ),
-                    default=0,
-                    name=f"x_{i}",
-                )
-                for i in range(self.dim)
-            },
-            seed=self.seed,
-        )
-
-    def _function(self, x: ndarray) -> float:
-        return self.instance._function(x=x)
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        return self.instance.x_min
-
-    @property
-    def f_min(self) -> float:
-        return self.instance.f_min
-
-
 class ParameterInteractions(AbstractFunction):
+    """
+    This benchmark resembles algorithm configuration scenarios where parameters are interdependent and require joint tuning
+    to fully leverage interaction effects. It includes various mathematical test functions, specifically designed to
+    exhibit such behavior.
+    """
     def __init__(
         self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
     ) -> None:
@@ -133,6 +89,8 @@ class ParameterInteractions(AbstractFunction):
             self.instance = Rosenbrock(dim, seed)
         elif self.name.lower() == "ackley":
             self.instance = Ackley(dim, seed)
+        elif self.name.lower() == "griewank":
+            self.instance = Griewank(dim, seed)
 
         self._configspace = self.instance._create_config_space()
         self.benchmark_name = "c2"
@@ -147,6 +105,311 @@ class ParameterInteractions(AbstractFunction):
     @property
     def f_min(self):
         return self.instance.f_min
+
+
+class ActivationStructures(AbstractFunction):
+    """
+    This benchmark simulates algorithm configuration scenarios where a set of parameters can be grouped into
+    distinct subsets each of which is active if and only if a categorical parameter takes a certain value.
+
+    The categorical parameter is supposed to be the last entry of the input vector.
+    """
+    def __init__(
+        self,
+        dim: int,
+        groups: int,
+        loggers: list | None = None,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+
+        self._x_min = None
+        self.groups = groups
+        self.rng = np.random.default_rng(seed=seed)
+
+        self.instances = self._make_groups()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "c4"
+
+    def _create_config_space(self):
+        configuration_space = ConfigurationSpace()
+
+        for cat, instance in self.instances.items():
+            function = instance["function"]
+
+            configuration_space.add_configuration_space(
+                configuration_space=function._create_config_space(),
+                prefix=cat,
+                delimiter=":",
+            )
+        configuration_space.add(
+            CategoricalHyperparameter(name="c", choices=range(self.groups), default_value=0)
+        )
+        return configuration_space
+
+    def _make_groups(self):
+        instances = {}
+        x_i = 0
+
+        dim_without_categorical = self.dim-1
+
+        min_group_size = dim_without_categorical // self.groups
+        remainder = dim_without_categorical % self.groups
+        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+            self.groups - remainder
+        )
+        group_seeds = self.rng.integers(low=0, high=1000, size=self.groups)
+
+        for i in range(self.groups):
+            instances[i] = {
+                "function": SumOfQ(seed=group_seeds[i], dim=group_dims[i]),
+                "starts_at": x_i,
+            }
+            x_i += group_dims[i]
+
+        return instances
+
+    def _function(self, x: np.ndarray) -> float:
+        cat = x[-1]
+        instance = self.instances[cat]["function"]
+        starts_at = self.instances[cat]["starts_at"]
+        x = x[starts_at : starts_at + instance.dim]
+        return instance._function(x)
+
+    def _calculate_x_min(self):
+        current_best_f = math.inf
+
+        for cat, func in self.instances.items():
+            if func["function"].f_min < current_best_f:
+                x_min = list(func["function"].x_min) + [cat]
+
+        self._x_min = x_min
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        """
+        Return the cached x_min or calculate it if not already done.
+
+        Returns:
+            np.ndarray | None: The global minimum location (x_min) as a numpy array.
+        """
+        if self._x_min is None:
+            self._calculate_x_min()
+
+        return np.array(self._x_min)
+
+    @property
+    def f_min(self) -> float:
+        return self._function(self.x_min)
+
+
+class ShiftingDomains(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.benchmark_name = "c5"
+        self.rng = np.random.default_rng(seed=seed)
+
+        assert self.dim > 1, "Dimension has to be larger than one in this problem"
+
+        lower_bounds = [-100].append([0] * (self.dim - 1))
+        upper_bounds = [100].append([200] * (self.dim - 1))
+
+        self.instance = SumOfQ(seed=seed, dim=dim)
+        self.instance_shifted_domains = SumOfQ(
+            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
+        )
+
+        self._configspace = self._create_config_space(instance=self.instance)
+        self._configspace_shifted_domains = self._create_config_space(
+            instance=self.instance_shifted_domains
+        )
+
+    def _create_config_space(self, instance: SumOfQ):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(
+                        instance.lower_bounds[i],
+                        instance.upper_bounds[i],
+                    ),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _function(self, x: ndarray) -> float:
+        # Check the value of x0
+        if x[0] < 0:
+            return self.instance._function(x=x)
+
+        # Domains have shifted! Use shifted domains function
+        self._configspace = self._configspace_shifted_domains
+        return self.instance_shifted_domains._function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        if self.instance.f_min <= self.instance_shifted_domains.f_min:
+            return self.instance.x_min
+        return self.instance_shifted_domains.x_min
+
+    @property
+    def f_min(self) -> float:
+        return min(self.instance.f_min, self.instance_shifted_domains.f_min)
+
+class HierarchicalStructures(AbstractFunction):
+    """
+    This benchmark simulates algorithm configuration scenarios with a hierarchical structure:
+    a set of parameters is grouped into distinct subsets (groups),
+    each of which is further divided into subgroups,
+    where a pair of categorical parameters determines the active subset.
+
+    The categorical parameter determining the active group is supposed to be the last entry of the input vector and
+    the second last determines the active subgroup within the active group.
+    """
+    def __init__(
+        self,
+        dim: int,
+        groups: int,
+        subgroups_per_group: int,
+        loggers: list | None = None,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        assert groups * subgroups_per_group <= dim - 2, (
+            f"The total number of subgroups (groups * subgroups_per_group = {groups * subgroups_per_group}) "
+            f"must not exceed the total number of non-categorical parameters ({dim-2}). "
+        )
+        self._x_min = None
+        self.groups = groups
+        self.subgroups_per_group = subgroups_per_group
+        self.rng = np.random.default_rng(seed=seed)
+
+        self.instances = self._make_hierarchical_groups()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "c6"
+
+
+    def _create_config_space(self):
+        configuration_space = ConfigurationSpace()
+
+        for group_id, group_instances in self.instances.items():
+            for subgroup_id, instance in group_instances.items():
+                function = instance["function"]
+
+                configuration_space.add_configuration_space(
+                    configuration_space=function._create_config_space(),
+                    prefix=f"{group_id}:{subgroup_id}",
+                    delimiter=":",
+                )
+
+        configuration_space.add(
+            CategoricalHyperparameter(name="group", choices=range(self.groups), default_value=0)
+        )
+        configuration_space.add(
+            CategoricalHyperparameter(name="subgroup", choices=range(self.subgroups_per_group), default_value=0)
+        )
+        return configuration_space
+
+    def _make_hierarchical_groups(self):
+        instances = {}
+        x_i = 0
+
+        dim_without_categorical = self.dim-2
+
+
+        # Determine dimensions for groups and subgroups
+        total_subgroups = self.groups * self.subgroups_per_group
+        min_group_size = dim_without_categorical // total_subgroups
+        remainder = dim_without_categorical % total_subgroups
+        subgroup_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+            total_subgroups - remainder
+        )
+
+        # Generate seeds for each subgroup
+        subgroup_seeds = self.rng.integers(low=0, high=1000, size=total_subgroups)
+
+        # Create groups and subgroups
+        for group_id in range(self.groups):
+            group_instances = {}
+            for subgroup_id in range(self.subgroups_per_group):
+                subgroup_index = group_id * self.subgroups_per_group + subgroup_id
+                group_instances[subgroup_id] = {
+                    "function": SumOfQ(seed=subgroup_seeds[subgroup_index], dim=subgroup_dims[subgroup_index]),
+                    "starts_at": x_i,
+                }
+                x_i += subgroup_dims[subgroup_index]
+            instances[group_id] = group_instances
+
+        return instances
+
+    def _function(self, x: np.ndarray) -> float:
+        """
+        Evaluate the function at the given input `x`.
+
+        Args:
+            x (np.ndarray): The input vector of dimension `dim + 2`, where the last two entries are categorical.
+
+        Returns:
+            float: The function value at `x`.
+        """
+        group = x[-2]
+        subgroup = x[-1]
+
+        # Select the correct instance based on group and subgroup
+        instance = self.instances[group][subgroup]["function"]
+        starts_at = self.instances[group][subgroup]["starts_at"]
+        x = x[starts_at : starts_at + instance.dim]
+        return instance._function(x)
+
+    def _calculate_x_min(self):
+        """
+        Find the global minimum across all groups and subgroups.
+        """
+        current_best_f = math.inf
+        x_min = None
+
+        for group_id, group_instances in self.instances.items():
+            for subgroup_id, func in group_instances.items():
+                if func["function"].f_min < current_best_f:
+                    current_best_f = func["function"].f_min
+                    x_min = list(func["function"].x_min) + [group_id, subgroup_id]
+
+        self._x_min = x_min
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        """
+        Return the cached x_min or calculate it if not already done.
+
+        Returns:
+            np.ndarray | None: The global minimum location (x_min) as a numpy array.
+        """
+        if self._x_min is None:
+            self._calculate_x_min()
+
+        return np.array(self._x_min)
+
+    @property
+    def f_min(self) -> float:
+        """
+        Get the global minimum function value.
+
+        Returns:
+            float: The global minimum value.
+        """
+        return self._function(self.x_min)
+
+
 
 
 class InvalidParameterization(AbstractFunction):
@@ -214,6 +477,85 @@ class InvalidParameterization(AbstractFunction):
     def f_min(self) -> float:
         return self.instance.f_min
 
+class MixedDomains(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+
+        self.rng = np.random.default_rng(seed=seed)
+
+        lower_bounds = [-1] * math.ceil(self.dim / 2) + [-10000] * (self.dim // 2)
+        upper_bounds = [-b for b in lower_bounds]
+        self.instance = SumOfQ(
+            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
+        )
+
+        self._configspace = self._create_config_space()
+
+        self.benchmark_name = "c8"
+
+    def _create_config_space(self):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(
+                        self.instance.lower_bounds[i],
+                        self.instance.upper_bounds[i],
+                    ),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _function(self, x: ndarray) -> float:
+        return self.instance._function(x=x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        return self.instance.x_min
+
+    @property
+    def f_min(self) -> float:
+        return self.instance.f_min
+
+
+
+class DeterministicObjective(AbstractFunction):
+    """
+    This benchmark reflects algorithm configuration scenarios where the output of deterministic algorithms is
+    also deterministic.
+    An important capability of the optimizer is recognizing when an objective function is deterministic,
+    allowing it to avoid wasting resources on multiple evaluations of the same solution candidate.
+    """
+    def __init__(
+        self,
+        wrapped_bench: AbstractFunction):
+        self.wrapped_bench = wrapped_bench
+        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+        self.benchmark_name = "o1"
+
+    def _create_config_space(self, instance: SumOfQ):
+        return self.wrapped_bench._create_config_space(instance=instance)
+
+    def _function(self, x: ndarray) -> float:
+        f_eval = self.wrapped_bench._function(x=x)
+        return f_eval.item()
+
+    @property
+    def x_min(self) ->np.ndarray | None:
+        return self.wrapped_bench.x_min
+
+    @property
+    def f_min(self) -> float:
+        return self.wrapped_bench.f_min
+
 
 class NoisyEvaluation(AbstractFunction):
     def __init__(
@@ -251,6 +593,11 @@ class NoisyEvaluation(AbstractFunction):
             lambd = kwargs.get("lambd", 1)
             return lambda: self.rng.exponential(1 / lambd)
 
+        if distribution == "no_noise":
+            mean = kwargs.get("mean", 0)
+            stddev = kwargs.get("stddev", 0)
+            return lambda: self.rng.normal(mean, stddev)
+
         raise ValueError("Unsupported distribution type")
 
     def _function(self, x: np.ndarray) -> float:
@@ -267,6 +614,11 @@ class NoisyEvaluation(AbstractFunction):
 
 
 class MultipleObjectives(AbstractFunction):
+    """
+    This benchmark resembles algorithm configuration scenarios where multiple objective need to be optimized
+    simultaneously. It incorporates mathematical test functions that feature a set of Pareto-optimal solutions.
+    """
+
     def __init__(
         self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
     ) -> None:
@@ -311,88 +663,84 @@ class MultipleObjectives(AbstractFunction):
         return self.instance.f_min
 
 
-class ActivationStructures(AbstractFunction):
+class CensoredObjective(AbstractFunction):
+    """
+    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
+    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
+    bounds can be observed for configurations hitting the timeout.
+
+    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
+    """
     def __init__(
         self,
-        dim: int,
-        groups: int,
-        loggers: list | None = None,
-        seed: int | None = None,
-    ) -> None:
-        super().__init__(seed, dim, loggers)
+        cutoff: float,
+        wrapped_bench: AbstractFunction):
+        """
+        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
+        The cutoff is determined relative to the wrapped function's optimum.
+        wrapped_bench: another benchmark function that is wrapped into this one.
+        """
+        self.cutoff = cutoff
+        self.wrapped_bench = wrapped_bench
+        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+        self.benchmark_name = "o5"
 
-        self._x_min = None
-        self.groups = groups
-        self.rng = np.random.default_rng(seed=seed)
 
-        self.instances = self._make_groups()
+    def _create_config_space(self, instance: SumOfQ):
+        return self.wrapped_bench._create_config_space(instance=instance)
 
-        self._configspace = self._create_config_space()
-        self.benchmark_name = "c4"
+    def _function(self, x: ndarray) -> float:
+        f_eval = self.wrapped_bench._function(x=x)
 
-    def _create_config_space(self):
-        configuration_space = ConfigurationSpace()
+        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
+        # function value to indicate that the evaluation was not successful
+        if f_eval >= self.f_min * (1+self.cutoff):
+            return float("inf")
 
-        for cat, instance in self.instances.items():
-            function = instance["function"]
-
-            configuration_space.add_configuration_space(
-                configuration_space=function._create_config_space(),
-                prefix=cat,
-                delimiter=":",
-            )
-        configuration_space.add(
-            CategoricalHyperparameter(name="c", choices=range(self.groups), default_value=0)
-        )
-        return configuration_space
-
-    def _make_groups(self):
-        instances = {}
-        x_i = 0
-
-        min_group_size = self.dim // self.groups
-        remainder = self.dim % self.groups
-        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
-            self.groups - remainder
-        )
-        group_seeds = self.rng.integers(low=0, high=1000, size=self.groups)
-
-        for i in range(self.groups):
-            instances[i] = {
-                "function": SumOfQ(seed=group_seeds[i], dim=group_dims[i]),
-                "starts_at": x_i,
-            }
-            x_i += group_dims[i]
-
-        return instances
-
-    def _function(self, x: np.ndarray) -> float:
-        cat = x[-1]
-        instance = self.instances[cat]["function"]
-        starts_at = self.instances[cat]["starts_at"]
-        x = x[starts_at : starts_at + instance.dim]
-
-        return instance._function(x)
-
-    def _calculate_x_min(self):
-        current_best_f = math.inf
-
-        for cat, func in self.instances.items():
-            if func["function"].f_min < current_best_f:
-                x_min = (func["function"].x_min).append(cat)
-        self._x_min = x_min
+        return f_eval
 
     @property
-    def x_min(self) -> np.ndarray | None:
-        if self._x_min is not None:
-            self._calculate_x_min()
-
-        return self._x_min
+    def x_min(self) ->np.ndarray | None:
+        return self.wrapped_bench.x_min
 
     @property
     def f_min(self) -> float:
-        return self._function(self.x_min)
+        return self.wrapped_bench.f_min
 
+
+class Multimodal(AbstractFunction):
+    """
+    This benchmark simulates algorithm configuration scenarios where the objective function landscape is highly
+    multi-modal, featuring multiple local optima, some of which could be near the global optimum. It incorporates a
+    variety of mathematical test functions specifically designed to exhibit such characteristics. The seed parameter
+    determines the scaling factor applied to the function values.
+    """
+    def __init__(
+        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.name = name
+        self.dim = dim
+        self.rng = np.random.default_rng(seed=seed)
+
+        if self.name.lower() == "griewank":
+            self.instance = Griewank(dim, seed)
+        elif self.name.lower() == "rosenbrock":
+            self.instance = Rosenbrock(dim, seed)
+
+        self._configspace = self.instance._create_config_space()
+        self.benchmark_name = "o6"
+
+    def _function(self, x: np.ndarray) -> np.ndarray:
+        return self.instance._function(x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        return self.instance.x_min
+
+    @property
+    def f_min(self):
+        return self.instance.f_min
 
 class SinglePeak(AbstractFunction):
     def __init__(
@@ -450,106 +798,3 @@ class SinglePeak(AbstractFunction):
         return 0.0
 
 
-class ShiftingDomains(AbstractFunction):
-    def __init__(
-        self,
-        dim: int,
-        seed: int | None = None,
-        loggers: list | None = None,
-    ) -> None:
-        super().__init__(seed, dim, loggers)
-        self.benchmark_name = "c5"
-        self.rng = np.random.default_rng(seed=seed)
-
-        assert self.dim > 1, "Dimension has to be larger than one in this problem"
-
-        lower_bounds = [-100].append([0] * (self.dim - 1))
-        upper_bounds = [100].append([200] * (self.dim - 1))
-
-        self.instance = SumOfQ(seed=seed, dim=dim)
-        self.instance_shifted_domains = SumOfQ(
-            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
-        )
-
-        self._configspace = self._create_config_space(instance=self.instance)
-        self._configspace_shifted_domains = self._create_config_space(
-            instance=self.instance_shifted_domains
-        )
-
-    def _create_config_space(self, instance: SumOfQ):
-        return ConfigurationSpace(
-            {
-                f"x_{i}": Float(
-                    bounds=(
-                        instance.lower_bounds[i],
-                        instance.upper_bounds[i],
-                    ),
-                    default=0,
-                    name=f"x_{i}",
-                )
-                for i in range(self.dim)
-            },
-            seed=self.seed,
-        )
-
-    def _function(self, x: ndarray) -> float:
-        # Check the value of x0
-        if x[0] < 0:
-            return self.instance._function(x=x)
-
-        # Domains have shifted! Use shifted domains function
-        self._configspace = self._configspace_shifted_domains
-        return self.instance_shifted_domains._function(x=x)
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        if self.instance.f_min <= self.instance_shifted_domains.f_min:
-            return self.instance.x_min
-        return self.instance_shifted_domains.x_min
-
-    @property
-    def f_min(self) -> float:
-        return min(self.instance.f_min, self.instance_shifted_domains.f_min)
-
-
-class CensoredObjective(AbstractFunction):
-    """
-    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
-    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
-    bounds can be observed for configurations hitting the timeout.
-
-    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
-    """
-    def __init__(
-        self,
-        cutoff: float,
-        wrapped_bench: AbstractFunction):
-        """
-        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
-        The cutoff is determined relative to the wrapped function's optimum.
-        wrapped_bench: another benchmark function that is wrapped into this one.
-        """
-        self.cutoff = cutoff
-        self.wrapped_bench = wrapped_bench
-        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
-
-    def _create_config_space(self, instance: SumOfQ):
-        return self.wrapped_bench._create_config_space(instance=instance)
-
-    def _function(self, x: ndarray) -> float:
-        f_eval = self.wrapped_bench._function(x=x)
-
-        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
-        # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1+self.cutoff):
-            return float("inf")
-
-        return f_eval
-
-    @property
-    def x_min(self) ->np.ndarray | None:
-        return self.wrapped_bench.x_min
-
-    @property
-    def f_min(self) -> float:
-        return self.wrapped_bench.f_min
