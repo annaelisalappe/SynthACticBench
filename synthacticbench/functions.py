@@ -3,7 +3,8 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float
+from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float, Categorical, Integer
+from ConfigSpace.hyperparameters import FloatHyperparameter
 from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
@@ -264,6 +265,90 @@ class ShiftingDomains(AbstractFunction):
     @property
     def f_min(self) -> float:
         return min(self.instance.f_min, self.instance_shifted_domains.f_min)
+
+
+class MixedTypes(AbstractFunction):
+    """
+    Configuration Space Benchmark - C3
+    In this benchmark, we investigate to what extent an optimizer is capable of dealing with configuration spaces
+    comprising mixed types of parameters. We distinguish between categorical, Boolean (as a special instance of
+    categorical), integer, and float parameters.
+    """
+    def __init__(self, dim:int, share_cat:float, share_bool:float, share_int:float, share_float:float, seed:int | None = None, loggers: list | None = None) -> None:
+        super().__init__(seed, dim, loggers)
+
+        # normalize shares
+        sum = share_cat + share_bool + share_int + share_float
+        self.share_cat = share_cat / sum
+        self.share_bool = share_bool / sum
+        self.share_int = share_int / sum
+        self.share_float = share_float / sum
+
+        self.instance = SumOfQ(seed, dim, loggers=loggers)
+        self.lower_bounds = [-100] * self.dim
+        self.upper_bounds = [100] * self.dim
+        self.groups = list()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "c3"
+
+    def _create_config_space(self):
+        cs = ConfigurationSpace(seed=self.seed)
+        i = 0
+
+        # add Categorical hyperparameters
+        j = 0
+        np.random.seed(self.seed)
+        for j in range(math.floor(self.share_cat * self.dim)):
+            name = f"x_{i+j}"
+            group = np.random.random_integers(low=3, high=20)
+            self.groups.append(group)
+            cs.add(Categorical(name=name, items=range(group), default=0))
+        i += j+1
+
+        # add Boolean hyperparameters
+        j = 0
+        for j in range(math.floor(self.share_bool * self.dim)):
+            name = f"x_{i+j}"
+            cs.add(Categorical(name=name, items=range(2), default=0))
+        i += j+1
+
+        # add Integer hyperparameters
+        j = 0
+        for j in range(math.floor(self.share_int * self.dim)):
+            name = f"x_{i+j}"
+            cs.add(Integer(name=name, bounds=(-100, 100), default=0))
+        i += j+1
+
+        for j in range(i, self.dim):
+            name = f"x_{i+j}"
+            cs.add(Float(
+                bounds=(self.lower_bounds[j], self.upper_bounds[j]),
+                default=0.5,
+                name=f"x_{i}",
+            ))
+
+        return cs
+
+    def _function(self, x: np.ndarray) -> np.ndarray:
+        i = 0
+        j = 0
+        # transform categorical values
+        for j in range(math.floor(self.share_cat * self.dim)):
+            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / self.groups[j]
+            offset = x[j] * slice_size
+            x[j] = self.lower_bounds[j] + offset
+        i += j + 1
+
+        # transform Boolean values
+        for j in range(math.floor(self.share_bool * self.dim)):
+            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / 4
+            offset = (x[i+j]+1) * slice_size
+            x[j] = self.lower_bounds[i+j] + offset
+
+        # query base function for transformed x
+        return self.instance._function(x)
+
 
 class HierarchicalStructures(AbstractFunction):
     """
