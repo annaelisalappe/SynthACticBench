@@ -98,7 +98,7 @@ class Rosenbrock(AbstractFunction):
 
     def _make_coefficients(self) -> np.ndarray:
         generator = np.random.default_rng(seed=self.seed)
-        self.coefficients = generator.uniform(low=0.1, high=10, size=(1, 2))[0]
+        self.coefficients = generator.uniform(low=1, high=1, size=(1, 2))[0]
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         x = np.atleast_2d(x) if self.dim > 1 else x
@@ -142,7 +142,7 @@ class Ackley(AbstractFunction):
     def _make_coefficients(self) -> np.ndarray:
         generator = np.random.default_rng(seed=self.seed)
 
-        self.coefficients = generator.uniform(low=0.1, high=30, size=(1, 1))
+        self.coefficients = generator.uniform(low=1, high=1, size=(1, 1))
 
     @property
     def x_min(self) -> np.ndarray | None:

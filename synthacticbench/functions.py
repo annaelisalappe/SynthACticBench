@@ -108,6 +108,88 @@ class ParameterInteractions(AbstractFunction):
         return self.instance.f_min
 
 
+class MixedTypes(AbstractFunction):
+    """
+    Configuration Space Benchmark - C3
+    In this benchmark, we investigate to what extent an optimizer is capable of dealing with configuration spaces
+    comprising mixed types of parameters. We distinguish between categorical, Boolean (as a special instance of
+    categorical), integer, and float parameters.
+    """
+    def __init__(self, dim:int, share_cat:float, share_bool:float, share_int:float, share_float:float, seed:int | None = None, loggers: list | None = None) -> None:
+        super().__init__(seed, dim, loggers)
+
+        # normalize shares
+        sum = share_cat + share_bool + share_int + share_float
+        self.share_cat = share_cat / sum
+        self.share_bool = share_bool / sum
+        self.share_int = share_int / sum
+        self.share_float = share_float / sum
+
+        self.instance = SumOfQ(seed, dim, loggers=loggers)
+        self.lower_bounds = [-100] * self.dim
+        self.upper_bounds = [100] * self.dim
+        self.groups = list()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "c3"
+
+    def _create_config_space(self):
+        cs = ConfigurationSpace(seed=self.seed)
+        i = 0
+
+        # add Categorical hyperparameters
+        j = 0
+        np.random.seed(self.seed)
+        for j in range(math.floor(self.share_cat * self.dim)):
+            name = f"x_{i+j}"
+            group = np.random.randint(low=3, high=21)
+            self.groups.append(group)
+            cs.add(Categorical(name=name, items=range(group), default=0))
+        i += j+1
+
+        # add Boolean hyperparameters
+        j = 0
+        for j in range(math.floor(self.share_bool * self.dim)):
+            name = f"x_{i+j}"
+            cs.add(Categorical(name=name, items=range(2), default=0))
+        i += j+1
+
+        # add Integer hyperparameters
+        j = 0
+        for j in range(math.floor(self.share_int * self.dim)):
+            name = f"x_{i+j}"
+            cs.add(Integer(name=name, bounds=(-100, 100), default=0))
+        i += j+1
+
+        for j in range(i, self.dim):
+            name = f"x_{i+j}"
+            cs.add(Float(
+                bounds=(self.lower_bounds[j], self.upper_bounds[j]),
+                default=0.5,
+                name=f"x_{i+j}",
+            ))
+
+        return cs
+
+    def _function(self, x: np.ndarray) -> np.ndarray:
+        i = 0
+        j = 0
+        # transform categorical values
+        for j in range(math.floor(self.share_cat * self.dim)):
+            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / self.groups[j]
+            offset = x[j] * slice_size
+            x[j] = self.lower_bounds[j] + offset
+        i += j + 1
+
+        # transform Boolean values
+        for j in range(math.floor(self.share_bool * self.dim)):
+            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / 4
+            offset = (x[i+j]+1) * slice_size
+            x[j] = self.lower_bounds[i+j] + offset
+
+        # query base function for transformed x
+        return self.instance._function(x)
+
 class ActivationStructures(AbstractFunction):
     """
     This benchmark simulates algorithm configuration scenarios where a set of parameters can be grouped into
@@ -267,87 +349,6 @@ class ShiftingDomains(AbstractFunction):
         return min(self.instance.f_min, self.instance_shifted_domains.f_min)
 
 
-class MixedTypes(AbstractFunction):
-    """
-    Configuration Space Benchmark - C3
-    In this benchmark, we investigate to what extent an optimizer is capable of dealing with configuration spaces
-    comprising mixed types of parameters. We distinguish between categorical, Boolean (as a special instance of
-    categorical), integer, and float parameters.
-    """
-    def __init__(self, dim:int, share_cat:float, share_bool:float, share_int:float, share_float:float, seed:int | None = None, loggers: list | None = None) -> None:
-        super().__init__(seed, dim, loggers)
-
-        # normalize shares
-        sum = share_cat + share_bool + share_int + share_float
-        self.share_cat = share_cat / sum
-        self.share_bool = share_bool / sum
-        self.share_int = share_int / sum
-        self.share_float = share_float / sum
-
-        self.instance = SumOfQ(seed, dim, loggers=loggers)
-        self.lower_bounds = [-100] * self.dim
-        self.upper_bounds = [100] * self.dim
-        self.groups = list()
-
-        self._configspace = self._create_config_space()
-        self.benchmark_name = "c3"
-
-    def _create_config_space(self):
-        cs = ConfigurationSpace(seed=self.seed)
-        i = 0
-
-        # add Categorical hyperparameters
-        j = 0
-        np.random.seed(self.seed)
-        for j in range(math.floor(self.share_cat * self.dim)):
-            name = f"x_{i+j}"
-            group = np.random.random_integers(low=3, high=20)
-            self.groups.append(group)
-            cs.add(Categorical(name=name, items=range(group), default=0))
-        i += j+1
-
-        # add Boolean hyperparameters
-        j = 0
-        for j in range(math.floor(self.share_bool * self.dim)):
-            name = f"x_{i+j}"
-            cs.add(Categorical(name=name, items=range(2), default=0))
-        i += j+1
-
-        # add Integer hyperparameters
-        j = 0
-        for j in range(math.floor(self.share_int * self.dim)):
-            name = f"x_{i+j}"
-            cs.add(Integer(name=name, bounds=(-100, 100), default=0))
-        i += j+1
-
-        for j in range(i, self.dim):
-            name = f"x_{i+j}"
-            cs.add(Float(
-                bounds=(self.lower_bounds[j], self.upper_bounds[j]),
-                default=0.5,
-                name=f"x_{i}",
-            ))
-
-        return cs
-
-    def _function(self, x: np.ndarray) -> np.ndarray:
-        i = 0
-        j = 0
-        # transform categorical values
-        for j in range(math.floor(self.share_cat * self.dim)):
-            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / self.groups[j]
-            offset = x[j] * slice_size
-            x[j] = self.lower_bounds[j] + offset
-        i += j + 1
-
-        # transform Boolean values
-        for j in range(math.floor(self.share_bool * self.dim)):
-            slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / 4
-            offset = (x[i+j]+1) * slice_size
-            x[j] = self.lower_bounds[i+j] + offset
-
-        # query base function for transformed x
-        return self.instance._function(x)
 
 
 class HierarchicalStructures(AbstractFunction):
@@ -625,9 +626,10 @@ class DeterministicObjective(AbstractFunction):
         self.wrapped_bench = wrapped_bench
         super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
         self.benchmark_name = "o1"
+        self._configspace = self._create_config_space()
 
-    def _create_config_space(self, instance: SumOfQ):
-        return self.wrapped_bench._create_config_space(instance=instance)
+    def _create_config_space(self):
+        return self.wrapped_bench.configspace
 
     def _function(self, x: ndarray) -> float:
         f_eval = self.wrapped_bench._function(x=x)
@@ -748,246 +750,6 @@ class MultipleObjectives(AbstractFunction):
         return self.instance.f_min
 
 
-class CensoredObjective(AbstractFunction):
-    """
-    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
-    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
-    bounds can be observed for configurations hitting the timeout.
-
-    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
-    """
-    def __init__(
-        self,
-        cutoff: float,
-        wrapped_bench: AbstractFunction):
-        """
-        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
-        The cutoff is determined relative to the wrapped function's optimum.
-        wrapped_bench: another benchmark function that is wrapped into this one.
-        """
-        self.cutoff = cutoff
-        self.wrapped_bench = wrapped_bench
-        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
-        self.benchmark_name = "o5"
-
-
-    def _create_config_space(self, instance: SumOfQ):
-        return self.wrapped_bench._create_config_space(instance=instance)
-
-    def _function(self, x: ndarray) -> float:
-        f_eval = self.wrapped_bench._function(x=x)
-
-        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
-        # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1+self.cutoff):
-            return float("inf")
-
-        return f_eval
-
-    @property
-    def x_min(self) ->np.ndarray | None:
-        return self.wrapped_bench.x_min
-
-    @property
-    def f_min(self) -> float:
-        return self.wrapped_bench.f_min
-
-
-class Multimodal(AbstractFunction):
-    """
-    This benchmark simulates algorithm configuration scenarios where the objective function landscape is highly
-    multi-modal, featuring multiple local optima, some of which could be near the global optimum. It incorporates a
-    variety of mathematical test functions specifically designed to exhibit such characteristics. The seed parameter
-    determines the scaling factor applied to the function values.
-    """
-    def __init__(
-        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
-    ) -> None:
-        super().__init__(seed, dim, loggers)
-        self.name = name
-        self.dim = dim
-        self.rng = np.random.default_rng(seed=seed)
-
-        if self.name.lower() == "griewank":
-            self.instance = Griewank(dim, seed)
-        elif self.name.lower() == "rosenbrock":
-            self.instance = Rosenbrock(dim, seed)
-
-        self._configspace = self.instance._create_config_space()
-        self.benchmark_name = "o6"
-
-    def _function(self, x: np.ndarray) -> np.ndarray:
-        return self.instance._function(x)
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        return self.instance.x_min
-
-    @property
-    def f_min(self):
-        return self.instance.f_min
-
-class SinglePeak(AbstractFunction):
-    def __init__(
-        self,
-        dim: int,
-        peak_width: float,
-        loggers: list | None = None,
-        seed: int | None = None,
-    ) -> None:
-        super().__init__(seed, dim, loggers)
-        self.rng = np.random.default_rng(seed=seed)
-        self.lower_bound = -100
-        self.upper_bound = 100
-        self.peak_width = peak_width
-        self.lower_ends, self.abs_peak_width = self._make_peak()
-
-        self._configspace = self._create_config_space()
-        self.benchmark_name = "o7"
-
-    def _create_config_space(self):
-        return ConfigurationSpace(
-            {
-                f"x_{i}": Float(
-                    bounds=(self.lower_bound, self.upper_bound),
-                    default=0,
-                    name=f"x_{i}",
-                )
-                for i in range(self.dim)
-            },
-            seed=self.seed,
-        )
-
-    def _make_peak(self):
-        abs_peak_width = (
-            abs(self.lower_bound) + abs(self.upper_bound)
-        ) * self.peak_width
-        lower_ends = self.rng.uniform(
-            low=self.lower_bound,
-            high=(self.upper_bound - abs_peak_width),
-            size=self.dim,
-        )
-        return lower_ends, abs_peak_width
-
-    def _function(self, x: np.ndarray) -> float:
-        if np.all((self.lower_ends <= x) & (x < self.lower_ends + self.abs_peak_width)):
-            return 0.0
-
-        return 1.0
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        # TODO
-        pass
-
-    @property
-    def f_min(self) -> float:
-        return 0.0
-
-
-class ShiftingDomains(AbstractFunction):
-    def __init__(
-        self,
-        dim: int,
-        seed: int | None = None,
-        loggers: list | None = None,
-    ) -> None:
-        super().__init__(seed, dim, loggers)
-        self.benchmark_name = "c5"
-        self.rng = np.random.default_rng(seed=seed)
-
-        assert self.dim > 1, "Dimension has to be larger than one in this problem"
-
-        lower_bounds = [-200].append([0] * (self.dim - 1))
-        upper_bounds = [0].append([200] * (self.dim - 1))
-
-        self.instance = SumOfQ(seed=seed, dim=dim)
-        self.instance_shifted_domains = SumOfQ(
-            seed=seed, dim=dim, lower_bounds=lower_bounds, upper_bounds=upper_bounds
-        )
-
-        self._configspace = self._create_config_space(instance=self.instance)
-        self._configspace_shifted_domains = self._create_config_space(
-            instance=self.instance_shifted_domains
-        )
-
-    def _create_config_space(self, instance: SumOfQ):
-        return ConfigurationSpace(
-            {
-                f"x_{i}": Float(
-                    bounds=(
-                        instance.lower_bounds[i],
-                        instance.upper_bounds[i],
-                    ),
-                    default=0,
-                    name=f"x_{i}",
-                )
-                for i in range(self.dim)
-            },
-            seed=self.seed,
-        )
-
-    def _function(self, x: ndarray) -> float:
-        # Check the value of x0
-        if x[0] < 0:
-            return self.instance._function(x=x)
-
-        # Domains have shifted! Use shifted domains function
-        self._configspace = self._configspace_shifted_domains
-        return self.instance_shifted_domains._function(x=x)
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        if self.instance.f_min <= self.instance_shifted_domains.f_min:
-            return self.instance.x_min
-        return self.instance_shifted_domains.x_min
-
-    @property
-    def f_min(self) -> float:
-        return min(self.instance.f_min, self.instance_shifted_domains.f_min)
-
-
-class CensoredObjective(AbstractFunction):
-    """
-    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
-    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
-    bounds can be observed for configurations hitting the timeout.
-
-    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
-    """
-
-    def __init__(self, cutoff: float, wrapped_bench: AbstractFunction):
-        """
-        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
-        The cutoff is determined relative to the wrapped function's optimum.
-        wrapped_bench: another benchmark function that is wrapped into this one.
-        """
-        self.cutoff = cutoff
-        self.wrapped_bench = wrapped_bench
-        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
-
-    def _create_config_space(self, instance: SumOfQ):
-        return self.wrapped_bench._create_config_space(instance=instance)
-
-    def _function(self, x: ndarray) -> float:
-        f_eval = self.wrapped_bench._function(x=x)
-
-        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
-        # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1 + self.cutoff):
-            return float("inf")
-
-        return f_eval
-
-    @property
-    def x_min(self) -> np.ndarray | None:
-        return self.wrapped_bench.x_min
-
-    @property
-    def f_min(self) -> float:
-        return self.wrapped_bench.f_min
-
-
 class TimeDependentOP(AbstractFunction):
     def __init__(
         self,
@@ -1096,3 +858,144 @@ class TimeDependentNOP(AbstractFunction):
     def f_min(self) -> float:
         # TODO
         pass
+
+class CensoredObjective(AbstractFunction):
+    """
+    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
+    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
+    bounds can be observed for configurations hitting the timeout.
+
+    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
+    """
+    def __init__(
+        self,
+        cutoff: float,
+        wrapped_bench: AbstractFunction):
+        """
+        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
+        The cutoff is determined relative to the wrapped function's optimum.
+        wrapped_bench: another benchmark function that is wrapped into this one.
+        """
+        self.cutoff = cutoff
+        self.wrapped_bench = wrapped_bench
+        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+        self.benchmark_name = "o5"
+        self._configspace = self._create_config_space()
+
+    def _create_config_space(self):
+        return self.wrapped_bench.configspace
+
+
+    def _function(self, x: ndarray) -> float:
+        f_eval = self.wrapped_bench._function(x=x)
+
+        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
+        # function value to indicate that the evaluation was not successful
+        if f_eval >= self.f_min * (1+self.cutoff):
+            return float("inf")
+
+        return f_eval
+
+    @property
+    def x_min(self) ->np.ndarray | None:
+        return self.wrapped_bench.x_min
+
+    @property
+    def f_min(self) -> float:
+        return self.wrapped_bench.f_min
+
+
+class Multimodal(AbstractFunction):
+    """
+    This benchmark simulates algorithm configuration scenarios where the objective function landscape is highly
+    multi-modal, featuring multiple local optima, some of which could be near the global optimum. It incorporates a
+    variety of mathematical test functions specifically designed to exhibit such characteristics. The seed parameter
+    determines the scaling factor applied to the function values.
+    """
+    def __init__(
+        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.name = name
+        self.dim = dim
+        self.rng = np.random.default_rng(seed=seed)
+
+        if self.name.lower() == "ackley":
+            self.instance = Ackley(dim, seed)
+        elif self.name.lower() == "griewank":
+            self.instance = Griewank(dim, seed)
+
+        self._configspace = self.instance._create_config_space()
+        self.benchmark_name = "o6"
+
+    def _function(self, x: np.ndarray) -> np.ndarray:
+        return self.instance._function(x)
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        return self.instance.x_min
+
+    @property
+    def f_min(self):
+        return self.instance.f_min
+
+class SinglePeak(AbstractFunction):
+    def __init__(
+        self,
+        dim: int,
+        peak_width: float,
+        loggers: list | None = None,
+        seed: int | None = None,
+    ) -> None:
+        super().__init__(seed, dim, loggers)
+        self.rng = np.random.default_rng(seed=seed)
+        self.lower_bound = -100
+        self.upper_bound = 100
+        self.peak_width = peak_width
+        self.lower_ends, self.abs_peak_width = self._make_peak()
+
+        self._configspace = self._create_config_space()
+        self.benchmark_name = "o7"
+
+    def _create_config_space(self):
+        return ConfigurationSpace(
+            {
+                f"x_{i}": Float(
+                    bounds=(self.lower_bound, self.upper_bound),
+                    default=0,
+                    name=f"x_{i}",
+                )
+                for i in range(self.dim)
+            },
+            seed=self.seed,
+        )
+
+    def _make_peak(self):
+        abs_peak_width = (
+            abs(self.lower_bound) + abs(self.upper_bound)
+        ) * self.peak_width
+        lower_ends = self.rng.uniform(
+            low=self.lower_bound,
+            high=(self.upper_bound - abs_peak_width),
+            size=self.dim,
+        )
+        return lower_ends, abs_peak_width
+
+    def _function(self, x: np.ndarray) -> float:
+        if np.all((self.lower_ends <= x) & (x < self.lower_ends + self.abs_peak_width)):
+            return 0.0
+
+        return 1.0
+
+    @property
+    def x_min(self) -> np.ndarray | None:
+        # TODO
+        pass
+
+    @property
+    def f_min(self) -> float:
+        return 0.0
+
+
+
+
