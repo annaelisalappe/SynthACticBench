@@ -3,12 +3,24 @@ from __future__ import annotations
 import math
 
 import numpy as np
-from ConfigSpace import CategoricalHyperparameter, ConfigurationSpace, Float, Categorical, Integer
-from ConfigSpace.hyperparameters import FloatHyperparameter
+from ConfigSpace import (
+    Categorical,
+    CategoricalHyperparameter,
+    ConfigurationSpace,
+    Float,
+    Integer,
+)
 from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
-from synthacticbench.base_functions import ZDT1, ZDT3, Griewank, Ackley, Rosenbrock, SumOfQ
+from synthacticbench.base_functions import (
+    ZDT1,
+    ZDT3,
+    Ackley,
+    Griewank,
+    Rosenbrock,
+    SumOfQ,
+)
 
 
 class RelevantParameters(AbstractFunction):
@@ -74,10 +86,12 @@ class RelevantParameters(AbstractFunction):
 
 class ParameterInteractions(AbstractFunction):
     """
-    This benchmark resembles algorithm configuration scenarios where parameters are interdependent and require joint tuning
-    to fully leverage interaction effects. It includes various mathematical test functions, specifically designed to
+    This benchmark resembles algorithm configuration scenarios where parameters are
+    interdependent and require joint tuning to fully leverage interaction effects.
+    It includes various mathematical test functions, specifically designed to
     exhibit such behavior.
     """
+
     def __init__(
         self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
     ) -> None:
@@ -111,11 +125,21 @@ class ParameterInteractions(AbstractFunction):
 class MixedTypes(AbstractFunction):
     """
     Configuration Space Benchmark - C3
-    In this benchmark, we investigate to what extent an optimizer is capable of dealing with configuration spaces
-    comprising mixed types of parameters. We distinguish between categorical, Boolean (as a special instance of
-    categorical), integer, and float parameters.
+    In this benchmark, we investigate to what extent an optimizer is capable of dealing with
+    configuration spaces comprising mixed types of parameters. We distinguish between
+    categorical, Boolean (as a special instance of categorical), integer, and float parameters.
     """
-    def __init__(self, dim:int, share_cat:float, share_bool:float, share_int:float, share_float:float, seed:int | None = None, loggers: list | None = None) -> None:
+
+    def __init__(
+        self,
+        dim: int,
+        share_cat: float,
+        share_bool: float,
+        share_int: float,
+        share_float: float,
+        seed: int | None = None,
+        loggers: list | None = None,
+    ) -> None:
         super().__init__(seed, dim, loggers)
 
         # normalize shares
@@ -128,7 +152,7 @@ class MixedTypes(AbstractFunction):
         self.instance = SumOfQ(seed, dim, loggers=loggers)
         self.lower_bounds = [-100] * self.dim
         self.upper_bounds = [100] * self.dim
-        self.groups = list()
+        self.groups = []
 
         self._configspace = self._create_config_space()
         self.benchmark_name = "c3"
@@ -145,29 +169,31 @@ class MixedTypes(AbstractFunction):
             group = np.random.randint(low=3, high=21)
             self.groups.append(group)
             cs.add(Categorical(name=name, items=range(group), default=0))
-        i += j+1
+        i += j + 1
 
         # add Boolean hyperparameters
         j = 0
         for j in range(math.floor(self.share_bool * self.dim)):
             name = f"x_{i+j}"
             cs.add(Categorical(name=name, items=range(2), default=0))
-        i += j+1
+        i += j + 1
 
         # add Integer hyperparameters
         j = 0
         for j in range(math.floor(self.share_int * self.dim)):
             name = f"x_{i+j}"
             cs.add(Integer(name=name, bounds=(-100, 100), default=0))
-        i += j+1
+        i += j + 1
 
         for j in range(i, self.dim):
             name = f"x_{i+j}"
-            cs.add(Float(
-                bounds=(self.lower_bounds[j], self.upper_bounds[j]),
-                default=0.5,
-                name=f"x_{i+j}",
-            ))
+            cs.add(
+                Float(
+                    bounds=(self.lower_bounds[j], self.upper_bounds[j]),
+                    default=0.5,
+                    name=f"x_{i+j}",
+                )
+            )
 
         return cs
 
@@ -184,19 +210,22 @@ class MixedTypes(AbstractFunction):
         # transform Boolean values
         for j in range(math.floor(self.share_bool * self.dim)):
             slice_size = (self.upper_bounds[j] - self.lower_bounds[j]) / 4
-            offset = (x[i+j]+1) * slice_size
-            x[j] = self.lower_bounds[i+j] + offset
+            offset = (x[i + j] + 1) * slice_size
+            x[j] = self.lower_bounds[i + j] + offset
 
         # query base function for transformed x
         return self.instance._function(x)
 
+
 class ActivationStructures(AbstractFunction):
     """
-    This benchmark simulates algorithm configuration scenarios where a set of parameters can be grouped into
-    distinct subsets each of which is active if and only if a categorical parameter takes a certain value.
+    This benchmark simulates algorithm configuration scenarios where a set of parameters can
+    be grouped into distinct subsets each of which is active if and only if a categorical
+    parameter takes a certain value.
 
     The categorical parameter is supposed to be the last entry of the input vector.
     """
+
     def __init__(
         self,
         dim: int,
@@ -235,7 +264,7 @@ class ActivationStructures(AbstractFunction):
         instances = {}
         x_i = 0
 
-        dim_without_categorical = self.dim-1
+        dim_without_categorical = self.dim - 1
 
         min_group_size = dim_without_categorical // self.groups
         remainder = dim_without_categorical % self.groups
@@ -265,7 +294,7 @@ class ActivationStructures(AbstractFunction):
 
         for cat, func in self.instances.items():
             if func["function"].f_min < current_best_f:
-                x_min = list(func["function"].x_min) + [cat]
+                x_min = [*list(func["function"].x_min), cat]
 
         self._x_min = x_min
 
@@ -349,8 +378,6 @@ class ShiftingDomains(AbstractFunction):
         return min(self.instance.f_min, self.instance_shifted_domains.f_min)
 
 
-
-
 class HierarchicalStructures(AbstractFunction):
     """
     This benchmark simulates algorithm configuration scenarios with a hierarchical structure:
@@ -358,9 +385,11 @@ class HierarchicalStructures(AbstractFunction):
     each of which is further divided into subgroups,
     where a pair of categorical parameters determines the active subset.
 
-    The categorical parameter determining the active group is supposed to be the last entry of the input vector and
-    the second last determines the active subgroup within the active group.
+    The categorical parameter determining the active group is supposed to be the last entry of
+    the input vector and the second last determines the active subgroup within the
+    active group.
     """
+
     def __init__(
         self,
         dim: int,
@@ -371,7 +400,8 @@ class HierarchicalStructures(AbstractFunction):
     ) -> None:
         super().__init__(seed, dim, loggers)
         assert groups * subgroups_per_group <= dim - 2, (
-            f"The total number of subgroups (groups * subgroups_per_group = {groups * subgroups_per_group}) "
+            "The total number of subgroups "
+            f"(groups * subgroups_per_group = {groups * subgroups_per_group}) "
             f"must not exceed the total number of non-categorical parameters ({dim-2}). "
         )
         self._x_min = None
@@ -383,7 +413,6 @@ class HierarchicalStructures(AbstractFunction):
 
         self._configspace = self._create_config_space()
         self.benchmark_name = "c6"
-
 
     def _create_config_space(self):
         configuration_space = ConfigurationSpace()
@@ -399,10 +428,16 @@ class HierarchicalStructures(AbstractFunction):
                 )
 
         configuration_space.add(
-            CategoricalHyperparameter(name="group", choices=range(self.groups), default_value=0)
+            CategoricalHyperparameter(
+                name="group", choices=range(self.groups), default_value=0
+            )
         )
         configuration_space.add(
-            CategoricalHyperparameter(name="subgroup", choices=range(self.subgroups_per_group), default_value=0)
+            CategoricalHyperparameter(
+                name="subgroup",
+                choices=range(self.subgroups_per_group),
+                default_value=0,
+            )
         )
         return configuration_space
 
@@ -410,8 +445,7 @@ class HierarchicalStructures(AbstractFunction):
         instances = {}
         x_i = 0
 
-        dim_without_categorical = self.dim-2
-
+        dim_without_categorical = self.dim - 2
 
         # Determine dimensions for groups and subgroups
         total_subgroups = self.groups * self.subgroups_per_group
@@ -430,7 +464,10 @@ class HierarchicalStructures(AbstractFunction):
             for subgroup_id in range(self.subgroups_per_group):
                 subgroup_index = group_id * self.subgroups_per_group + subgroup_id
                 group_instances[subgroup_id] = {
-                    "function": SumOfQ(seed=subgroup_seeds[subgroup_index], dim=subgroup_dims[subgroup_index]),
+                    "function": SumOfQ(
+                        seed=subgroup_seeds[subgroup_index],
+                        dim=subgroup_dims[subgroup_index],
+                    ),
                     "starts_at": x_i,
                 }
                 x_i += subgroup_dims[subgroup_index]
@@ -443,7 +480,8 @@ class HierarchicalStructures(AbstractFunction):
         Evaluate the function at the given input `x`.
 
         Args:
-            x (np.ndarray): The input vector of dimension `dim + 2`, where the last two entries are categorical.
+            x (np.ndarray): The input vector of dimension `dim + 2`, where the last two
+                entries are categorical.
 
         Returns:
             float: The function value at `x`.
@@ -468,7 +506,7 @@ class HierarchicalStructures(AbstractFunction):
             for subgroup_id, func in group_instances.items():
                 if func["function"].f_min < current_best_f:
                     current_best_f = func["function"].f_min
-                    x_min = list(func["function"].x_min) + [group_id, subgroup_id]
+                    x_min = [*list(func["function"].x_min), group_id, subgroup_id]
 
         self._x_min = x_min
 
@@ -496,8 +534,6 @@ class HierarchicalStructures(AbstractFunction):
         return self._function(self.x_min)
 
 
-
-
 class InvalidParameterization(AbstractFunction):
     def __init__(
         self,
@@ -515,20 +551,24 @@ class InvalidParameterization(AbstractFunction):
 
         self._configspace = self.instance._create_config_space()
 
-        self.cube, self.cube_side = self._make_hypercube(cube_size)
+        self.cube, self.cube_sides = self._make_hypercube(cube_size)
 
     def _make_hypercube(self, cube_size):
-        cube_side = (
-            abs(self.instance.lower_bounds) + abs(self.instance.upper_bounds)
-        ) * cube_size
+        cube_side_sizes = np.array(
+            [
+                (abs(self.instance.lower_bounds[i]) + abs(self.instance.upper_bounds[i]))
+                * cube_size
+                for i in range(self.dim)
+            ]
+        )
         cube = np.array(
             self.rng.uniform(
                 low=self.instance.lower_bounds,
-                high=(self.instance.upper_bounds - cube_side),
+                high=(self.instance.upper_bounds - cube_side_sizes),
                 size=self.dim,
             )
         )
-        return cube, cube_side
+        return cube, cube_side_sizes
 
     def _function(self, x: np.ndarray) -> float:
         invalid = self._check_hypercube(x=x)
@@ -544,9 +584,8 @@ class InvalidParameterization(AbstractFunction):
     def _check_hypercube(self, x: np.ndarray):
         invalid = []
         for i in range(len(x)):
-            if self.cube[i] <= x[i] < self.cube[i] + self.cube_side:
+            if self.cube[i] <= x[i] < self.cube[i] + self.cube_sides[i]:
                 invalid.append(i)
-        print(invalid)
         return invalid
 
     # TODO: Is this okay?
@@ -562,6 +601,7 @@ class InvalidParameterization(AbstractFunction):
     @property
     def f_min(self) -> float:
         return self.instance.f_min
+
 
 class MixedDomains(AbstractFunction):
     def __init__(
@@ -612,17 +652,16 @@ class MixedDomains(AbstractFunction):
         return self.instance.f_min
 
 
-
 class DeterministicObjective(AbstractFunction):
     """
-    This benchmark reflects algorithm configuration scenarios where the output of deterministic algorithms is
-    also deterministic.
-    An important capability of the optimizer is recognizing when an objective function is deterministic,
-    allowing it to avoid wasting resources on multiple evaluations of the same solution candidate.
+    This benchmark reflects algorithm configuration scenarios where the output of deterministic
+    algorithms is also deterministic.
+    An important capability of the optimizer is recognizing when an objective function is
+    deterministic, allowing it to avoid wasting resources on multiple evaluations of the same
+    solution candidate.
     """
-    def __init__(
-        self,
-        wrapped_bench: AbstractFunction):
+
+    def __init__(self, wrapped_bench: AbstractFunction):
         self.wrapped_bench = wrapped_bench
         super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
         self.benchmark_name = "o1"
@@ -636,7 +675,7 @@ class DeterministicObjective(AbstractFunction):
         return f_eval.item()
 
     @property
-    def x_min(self) ->np.ndarray | None:
+    def x_min(self) -> np.ndarray | None:
         return self.wrapped_bench.x_min
 
     @property
@@ -702,8 +741,9 @@ class NoisyEvaluation(AbstractFunction):
 
 class MultipleObjectives(AbstractFunction):
     """
-    This benchmark resembles algorithm configuration scenarios where multiple objective need to be optimized
-    simultaneously. It incorporates mathematical test functions that feature a set of Pareto-optimal solutions.
+    This benchmark resembles algorithm configuration scenarios where multiple objective need
+    to be optimized simultaneously. It incorporates mathematical test
+    functions that feature a set of Pareto-optimal solutions.
     """
 
     def __init__(
@@ -859,20 +899,22 @@ class TimeDependentNOP(AbstractFunction):
         # TODO
         pass
 
+
 class CensoredObjective(AbstractFunction):
     """
-    This benchmark resembles algorithm configuration settings where certain qualities cannot be observed. E.g., when
-    optimizing for runtime there is a cutoff on the evaluation time of a single algorithm configuration and only lower
-    bounds can be observed for configurations hitting the timeout.
+    This benchmark resembles algorithm configuration settings where certain qualities cannot
+    be observed. E.g., when optimizing for runtime there is a cutoff on the evaluation time of
+    a single algorithm configuration and only lower bounds can be observed for configurations
+    hitting the timeout.
 
-    This benchmark wraps any other benchmark and cuts off objective functions that exceed a certain amount.
+    This benchmark wraps any other benchmark and cuts off objective functions that exceed a
+    certain amount.
     """
-    def __init__(
-        self,
-        cutoff: float,
-        wrapped_bench: AbstractFunction):
+
+    def __init__(self, cutoff: float, wrapped_bench: AbstractFunction):
         """
-        cutoff: Percentage of objective function value that is still reported. Values above the threshold will be censored.
+        cutoff: Percentage of objective function value that is still reported. Values above
+        the threshold will be censored.
         The cutoff is determined relative to the wrapped function's optimum.
         wrapped_bench: another benchmark function that is wrapped into this one.
         """
@@ -885,19 +927,19 @@ class CensoredObjective(AbstractFunction):
     def _create_config_space(self):
         return self.wrapped_bench.configspace
 
-
     def _function(self, x: ndarray) -> float:
         f_eval = self.wrapped_bench._function(x=x)
 
-        # if the function value is more that cutoff percent worse than the minimum, return infinity instead of the true
+        # if the function value is more that cutoff percent worse than the minimum, return
+        # infinity instead of the true
         # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1+self.cutoff):
+        if f_eval >= self.f_min * (1 + self.cutoff):
             return float("inf")
 
         return f_eval
 
     @property
-    def x_min(self) ->np.ndarray | None:
+    def x_min(self) -> np.ndarray | None:
         return self.wrapped_bench.x_min
 
     @property
@@ -907,11 +949,13 @@ class CensoredObjective(AbstractFunction):
 
 class Multimodal(AbstractFunction):
     """
-    This benchmark simulates algorithm configuration scenarios where the objective function landscape is highly
-    multi-modal, featuring multiple local optima, some of which could be near the global optimum. It incorporates a
-    variety of mathematical test functions specifically designed to exhibit such characteristics. The seed parameter
+    This benchmark simulates algorithm configuration scenarios where the objective function
+    landscape is highly multi-modal, featuring multiple local optima, some of which could be
+    near the global optimum. It incorporates a variety of mathematical test functions
+    specifically designed to exhibit such characteristics. The seed parameter
     determines the scaling factor applied to the function values.
     """
+
     def __init__(
         self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
     ) -> None:
@@ -938,6 +982,7 @@ class Multimodal(AbstractFunction):
     @property
     def f_min(self):
         return self.instance.f_min
+
 
 class SinglePeak(AbstractFunction):
     def __init__(
@@ -971,9 +1016,7 @@ class SinglePeak(AbstractFunction):
         )
 
     def _make_peak(self):
-        abs_peak_width = (
-            abs(self.lower_bound) + abs(self.upper_bound)
-        ) * self.peak_width
+        abs_peak_width = (abs(self.lower_bound) + abs(self.upper_bound)) * self.peak_width
         lower_ends = self.rng.uniform(
             low=self.lower_bound,
             high=(self.upper_bound - abs_peak_width),
@@ -995,7 +1038,3 @@ class SinglePeak(AbstractFunction):
     @property
     def f_min(self) -> float:
         return 0.0
-
-
-
-

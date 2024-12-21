@@ -32,7 +32,7 @@ function_classes = [
     "path",
     [
         "synthacticbench/configs/problem/SynthACticBench/RelevantParameters.yaml",
-        "synthacticbench/configs/problem/SynthACticBench/InvalidParametrisation.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/InvalidParameterization.yaml",
         "synthacticbench/configs/problem/SynthACticBench/NoisyEvaluation.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-rosenbrock.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-ackley.yaml",
@@ -54,7 +54,7 @@ def test_instantiate_and_evaluate(path):
     "path",
     [
         "synthacticbench/configs/problem/SynthACticBench/RelevantParameters.yaml",
-        "synthacticbench/configs/problem/SynthACticBench/InvalidParametrisation.yaml",
+        "synthacticbench/configs/problem/SynthACticBench/InvalidParameterization.yaml",
         "synthacticbench/configs/problem/SynthACticBench/NoisyEvaluation.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-rosenbrock.yaml",
         "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-ackley.yaml",
