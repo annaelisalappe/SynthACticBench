@@ -24,22 +24,50 @@ from synthacticbench.base_functions import (
 
 
 class RelevantParameters(AbstractFunction):
+    """
+    Configuration Space Benchmark - C1
+    This benchmark models a function where only a subset of parameters significantly affects
+    the optimization task.
+
+    This class calculates a sum of quadratic functions and noisy parameters
+    to simulate a scenario where an optimizer is tasked with identifying relevant parameters
+    among a large set of potential ones.
+    """
+
     def __init__(
         self,
         num_quadratic: int,
         dim: int,
+        noise_low: float = -100,
+        noise_high=100,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        """
+        Initializes the benchmark with the specified dimensions and noise level.
 
+        Args:
+            num_quadratic (int): Number of quadratic functions representing relevant
+                parameters.
+            dim (int): Total dimensionality of the parameter space.
+            noise_low (float, optional): Lower bound for the noisy parameters' range.
+                Default is -100.
+            noise_high (float, optional): Upper bound for the noisy parameters' range.
+                Default is 100.
+            seed (int or None, optional): Seed for random number generation. Default is None.
+            loggers (list or None, optional): Optional list of loggers for logging.
+                Default is None.
+        """
+        super().__init__(seed, dim, loggers)
+        self.noise_low = noise_low
+        self.noise_high = noise_high
         self.num_quadratic = num_quadratic
         self.num_noisy = self.dim - self.num_quadratic
 
         self.rng = np.random.default_rng(seed=seed)
 
         self.instance = SumOfQ(seed=seed, dim=self.num_quadratic)
-        self.noisy_functions = self.rng.spawn(n_children=1)[0]
+        self.noisy_function = self.rng.spawn(n_children=1)[0]
 
         self._configspace = self._create_config_space()
 
@@ -67,12 +95,26 @@ class RelevantParameters(AbstractFunction):
 
     def _function(self, x: ndarray) -> float:
         quadr_sum = self.instance._function(x[: self.num_quadratic])
-        noisy_sum = sum(self.noisy_functions.uniform(size=self.num_noisy))
+        noisy_sum = sum(
+            self.noisy_function.uniform(
+                low=self.noise_low, high=self.noise_high, size=self.num_noisy
+            )
+        )
 
         return quadr_sum + noisy_sum
 
     @property
     def x_min(self):
+        """
+        The minimum parameter values for the benchmark, combining the minimum values for the
+        quadratic parameters and the noisy parameters. Because the noisy parameters do not
+        have a meaningful minimum, their x_min is denoted by None
+        (reflecting the entire domain).
+
+        Returns:
+            ndarray: An array of minimum parameter values,
+                with `None` for the noisy parameters.
+        """
         x_mins_quadr = self.instance.x_min
         x_mins_noisy = np.array((None) * self.num_noisy)
 
@@ -80,12 +122,19 @@ class RelevantParameters(AbstractFunction):
 
     @property
     def f_min(self) -> float:
-        # Noisy params have their min at 0.0
-        return self.instance.f_min
+        """
+        The minimum value of the objective function, which combines the minimum values of
+        the quadratic function and the expected value of the noisy contribution.
+
+        Returns:
+            float: The minimum value of the objective function.
+        """
+        return self.instance.f_min + ((self.noise_low + self.noise_high) * 0.5)
 
 
 class ParameterInteractions(AbstractFunction):
     """
+    Parameter Interactions - C2
     This benchmark resembles algorithm configuration scenarios where parameters are
     interdependent and require joint tuning to fully leverage interaction effects.
     It includes various mathematical test functions, specifically designed to
@@ -93,9 +142,25 @@ class ParameterInteractions(AbstractFunction):
     """
 
     def __init__(
-        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
+        self,
+        dim: int,
+        name: str = "ackley",
+        seed: int | None = None,
+        loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark with the specified dimension.
+
+        Args:
+            dim (int): Total dimensionality of the parameter space.
+            name (str): Type of function to be used. Must be one of "ackley", "rosenbrock" or
+                "griewank". Defaults to "ackley".
+            seed (int or None, optional): Seed for random number generation. Default is None.
+            loggers (list or None, optional): Optional list of loggers for logging.
+                Default is None.
+        """
         super().__init__(seed, dim, loggers)
+        self.benchmark_name = "C2"
         self.name = name
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
@@ -108,7 +173,6 @@ class ParameterInteractions(AbstractFunction):
             self.instance = Griewank(dim, seed)
 
         self._configspace = self.instance._create_config_space()
-        self.benchmark_name = "c2"
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         return self.instance._function(x)
@@ -140,22 +204,42 @@ class MixedTypes(AbstractFunction):
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): Total dimensionality of the parameter space.
+            share_cat (float): Share of categorical parameters.
+            share_bool (float): Share of boolean parameters.
+            share_int (float): Share of integer parameters.
+            share_float (float): Share of float parameters.
+            seed (int or None, optional): Seed for random number generation. Default is None.
+            loggers (list or None, optional): Optional list of loggers for logging.
+                Default is None.
+
+        Note:
+            The share_cat/bool/int/float parameters are normalized over the
+            number of all parameters to give the share of that parameter type over the
+            dimension dim.
+        """
         super().__init__(seed, dim, loggers)
 
         # normalize shares
-        sum = share_cat + share_bool + share_int + share_float
-        self.share_cat = share_cat / sum
-        self.share_bool = share_bool / sum
-        self.share_int = share_int / sum
-        self.share_float = share_float / sum
+        share_sum = share_cat + share_bool + share_int + share_float
+        self.share_cat = share_cat / share_sum
+        self.share_bool = share_bool / share_sum
+        self.share_int = share_int / share_sum
+        self.share_float = share_float / share_sum
 
         self.instance = SumOfQ(seed, dim, loggers=loggers)
         self.lower_bounds = [-100] * self.dim
         self.upper_bounds = [100] * self.dim
         self.groups = []
 
+        self.rng = np.random.default_rng(seed=seed)
+
+        self.benchmark_name = "C3"
         self._configspace = self._create_config_space()
-        self.benchmark_name = "c3"
 
     def _create_config_space(self):
         cs = ConfigurationSpace(seed=self.seed)
@@ -163,10 +247,9 @@ class MixedTypes(AbstractFunction):
 
         # add Categorical hyperparameters
         j = 0
-        np.random.seed(self.seed)
         for j in range(math.floor(self.share_cat * self.dim)):
             name = f"x_{i+j}"
-            group = np.random.randint(low=3, high=21)
+            group = self.rng.integers(low=3, high=21)
             self.groups.append(group)
             cs.add(Categorical(name=name, items=range(group), default=0))
         i += j + 1
@@ -185,6 +268,7 @@ class MixedTypes(AbstractFunction):
             cs.add(Integer(name=name, bounds=(-100, 100), default=0))
         i += j + 1
 
+        # add Float hyperparameters
         for j in range(i, self.dim):
             name = f"x_{i+j}"
             cs.add(
@@ -219,6 +303,7 @@ class MixedTypes(AbstractFunction):
 
 class ActivationStructures(AbstractFunction):
     """
+    Activation Structures - C4
     This benchmark simulates algorithm configuration scenarios where a set of parameters can
     be grouped into distinct subsets each of which is active if and only if a categorical
     parameter takes a certain value.
@@ -229,13 +314,26 @@ class ActivationStructures(AbstractFunction):
     def __init__(
         self,
         dim: int,
-        groups: int,
-        loggers: list | None = None,
+        groups: int = 1,
         seed: int | None = None,
+        loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): Total dimensionality of the parameter space.
+            groups (int): Number of subsets of parameters that can be activated by different
+                values of the a categorical parameter. Defaults to 1.
+            seed (int or None, optional): Seed for random number generation. Default is None.
+            loggers (list or None, optional): Optional list of loggers for logging.
+                Default is None.
+        """
         super().__init__(seed, dim, loggers)
 
         self._x_min = None
+
+        assert self.groups > 0, "Benchmark must have at least one group."
         self.groups = groups
         self.rng = np.random.default_rng(seed=seed)
 
@@ -317,12 +415,29 @@ class ActivationStructures(AbstractFunction):
 
 
 class ShiftingDomains(AbstractFunction):
+    """
+    Shifting Domains - C5
+    This benchmark models parameter domain shifts, where the choice of one parameter's (x0)
+    value affects the valid domains of other parameters. This class simulates an optimization
+    problem in which the parameter search space can change dynamically based on the values of
+    certain parameters.
+    """
+
     def __init__(
         self,
         dim: int,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the ShiftingDomains class, setting up two instances of the SumOfQ
+        function—one for the original domains and one for the shifted domains.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
         self.benchmark_name = "c5"
         self.rng = np.random.default_rng(seed=seed)
@@ -343,6 +458,16 @@ class ShiftingDomains(AbstractFunction):
         )
 
     def _create_config_space(self, instance: SumOfQ):
+        """
+        Creates the configuration space based on the given SumOfQ instance.
+
+        Args:
+            instance (SumOfQ): The SumOfQ instance to create the config space.
+
+        Returns:
+            ConfigurationSpace:
+                A configuration space defining the parameter bounds and default values.
+        """
         return ConfigurationSpace(
             {
                 f"x_{i}": Float(
@@ -359,6 +484,18 @@ class ShiftingDomains(AbstractFunction):
         )
 
     def _function(self, x: ndarray) -> float:
+        """
+        Evaluates the objective function for the given x. If the x0 is less than 0,
+        the original configuration space is used.
+        Otherwise, the shifted configuration space is used.
+
+        Args:
+            x (ndarray): A vector of parameter values to evaluate.
+
+        Returns:
+            float: The value of the objective function based on the current configuration
+                space (original or shifted).
+        """
         # Check the value of x0
         if x[0] < 0:
             return self.instance._function(x=x)
@@ -369,17 +506,33 @@ class ShiftingDomains(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
+        """
+        Returns the optimal parameter vector `x_min` for the benchmark function.
+        This is the optimal vector from either the original or shifted domains, depending on
+        which yields the smaller minimum value.
+
+        Returns:
+            np.ndarray | None: The optimal parameter vector.
+        """
         if self.instance.f_min <= self.instance_shifted_domains.f_min:
             return self.instance.x_min
         return self.instance_shifted_domains.x_min
 
     @property
     def f_min(self) -> float:
+        """
+        Returns the minimum value of the objective function `f_min`. This is the smaller of
+        the minimum values from the original and shifted domains.
+
+        Returns:
+            float: The minimum value of the objective function.
+        """
         return min(self.instance.f_min, self.instance_shifted_domains.f_min)
 
 
 class HierarchicalStructures(AbstractFunction):
     """
+    Hierarchical Structures - C6
     This benchmark simulates algorithm configuration scenarios with a hierarchical structure:
     a set of parameters is grouped into distinct subsets (groups),
     each of which is further divided into subgroups,
@@ -395,9 +548,19 @@ class HierarchicalStructures(AbstractFunction):
         dim: int,
         groups: int,
         subgroups_per_group: int,
-        loggers: list | None = None,
         seed: int | None = None,
+        loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            groups (int): Number of groups.
+            subgroups_per_group (int): Number of subgroups in each group.
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
         assert groups * subgroups_per_group <= dim - 2, (
             "The total number of subgroups "
@@ -535,6 +698,19 @@ class HierarchicalStructures(AbstractFunction):
 
 
 class InvalidParameterization(AbstractFunction):
+    """
+    Invalid Parameterization - C7
+    This benchmark simulates a scenario where certain regions of the parameter search space
+    are invalid, and attempts to evaluate the objective function in those regions will raise
+    an exception.
+
+    This benchmark represents situations where invalid parameterizations occur, such as
+    forbidden combinations of parameter values, configurations that do not fit into memory,
+    or situations that result in an exception or crash during algorithm execution.
+    The optimizer is tasked with finding valid configurations while avoiding these invalid
+    subspaces.
+    """
+
     def __init__(
         self,
         dim: int,
@@ -542,6 +718,16 @@ class InvalidParameterization(AbstractFunction):
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            cube_size (float): The percentage of each parameters' domain that will return
+                an invalid parameterization. Must be between 0.0 and 1.0.
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
         self.benchmark_name = "c7"
 
@@ -554,6 +740,18 @@ class InvalidParameterization(AbstractFunction):
         self.cube, self.cube_sides = self._make_hypercube(cube_size)
 
     def _make_hypercube(self, cube_size):
+        """
+        Creates an invalid hypercube within the parameter space. The size of the hypercube
+        is determined by the `cube_size` parameter, and its coordinates are randomly sampled
+        based on the parameter bounds of the underlying quadratic function.
+
+        Args:
+            cube_size (float): The size of the invalid hypercube within the search space.
+
+        Returns:
+            tuple: A tuple containing the coordinates of the lower bounds of the hypercube
+                (`cube`) and the side lengths (`cube_sides`).
+        """
         cube_side_sizes = np.array(
             [
                 (abs(self.instance.lower_bounds[i]) + abs(self.instance.upper_bounds[i]))
@@ -584,32 +782,69 @@ class InvalidParameterization(AbstractFunction):
     def _check_hypercube(self, x: np.ndarray):
         invalid = []
         for i in range(len(x)):
-            if self.cube[i] <= x[i] < self.cube[i] + self.cube_sides[i]:
+            if self.cube[i] < x[i] < self.cube[i] + self.cube_sides[i]:
                 invalid.append(i)
         return invalid
 
-    # TODO: Is this okay?
     @property
     def x_min(self) -> np.ndarray | None:
+        """
+        Evaluates the minimal value of this benchmark's function. If the minimum x value of any
+        of the parameters lie withing the hypercube, that parameter's quadratic function is
+        evaluated at its bounds and at the edges of the hypercube to find the smallest value
+        where x is a valid parameterisation.
+        """
+        if self._x_min:
+            return self._x_min
+
         x_min = self.instance.x_min
         invalid = self._check_hypercube(x=x_min)
         for i in invalid:
-            x_min[i] = Exception
-        return x_min
+            b = [
+                self.instance.lower_bounds[i],
+                self.cube[i],
+                self.cube[i] + self.cube_sides[i],
+                self.instance.upper_bounds[i],
+            ]
+            argmin = np.argmin(
+                self.instance.get_value_in_single_dim(b[0]),
+                self.instance.get_value_in_single_dim(b[1]),
+                self.instance.get_value_in_single_dim(b[2]),
+                self.instance.get_value_in_single_dim(b[3]),
+            )
+            x_min[i] = b[argmin]
 
-    # TODO: Is this okay?
+        self._x_min = x_min
+
+        return self._x_min
+
     @property
     def f_min(self) -> float:
-        return self.instance.f_min
+        return self.instance._function(self.x_min)
 
 
 class MixedDomains(AbstractFunction):
+    """
+    Mixed Domains - C8
+    A synthetic benchmark function where the search space comprises domains of different sizes,
+    combining dim/2 many narrow [-1; 1] and wide [-10000; 10000] ranges each. The
+    objective function is simply an instance of the SumOfQ function, with these custom domains.
+    """
+
     def __init__(
         self,
         dim: int,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
 
         self.rng = np.random.default_rng(seed=seed)
@@ -654,6 +889,7 @@ class MixedDomains(AbstractFunction):
 
 class DeterministicObjective(AbstractFunction):
     """
+    Deterministic Objective - o1
     This benchmark reflects algorithm configuration scenarios where the output of deterministic
     algorithms is also deterministic.
     An important capability of the optimizer is recognizing when an objective function is
@@ -684,14 +920,36 @@ class DeterministicObjective(AbstractFunction):
 
 
 class NoisyEvaluation(AbstractFunction):
+    """
+    Noisy Evaluation - o2
+    This function that simulates real-world algorithm configuration problems where evaluations
+    of candidate solutions are noisy. This noise can stem from non-deterministic algorithms
+    or from external factors like system load or environmental conditions.
+
+    The objective function for this benchmark is a composition of the base evaluation of a
+    parameterization (via the SumOfQ function) and an independent noise term. The noise term
+    can follow different distributions, such as normal, uniform, or exponential, and is added
+    to the objective function value.
+    """
+
     def __init__(
         self,
         dim: int,
-        loggers: list | None = None,
-        seed: int | None = None,
         distribution: str = "uniform",
+        seed: int | None = None,
+        loggers: list | None = None,
         **kwargs,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            distribution (str): The distribution of the noise that is added to the function
+                evaluations. Must be one of "uniform", "normal, "exponential" or "no_noise".
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
@@ -708,20 +966,24 @@ class NoisyEvaluation(AbstractFunction):
         if distribution == "normal":
             mean = kwargs.get("mean", 0)
             stddev = kwargs.get("stddev", 1)
+            self.expd_value = mean
             return lambda: self.rng.normal(mean, stddev)
 
         if distribution == "uniform":
             low = kwargs.get("low", -1)
             high = kwargs.get("high", 1)
+            self.expd_value = (low + high) * 0.5
             return lambda: self.rng.uniform(low, high)
 
         if distribution == "exponential":
             lambd = kwargs.get("lambd", 1)
+            self.expd_value = 1 / lambd
             return lambda: self.rng.exponential(1 / lambd)
 
         if distribution == "no_noise":
             mean = kwargs.get("mean", 0)
             stddev = kwargs.get("stddev", 0)
+            self.expd_value = 0
             return lambda: self.rng.normal(mean, stddev)
 
         raise ValueError("Unsupported distribution type")
@@ -732,25 +994,45 @@ class NoisyEvaluation(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
-        return self.instance.x_min
+        """
+        Returns the optimal parameter vector `x_min` for the benchmark function,
+        adjusted with the expected value of the noise.
+
+        Returns:
+            np.ndarray | None: The optimal parameter vector with the expected (mean) noise.
+        """
+        return self.instance.x_min + self.expd_value
 
     @property
     def f_min(self) -> float:
+        """
+        Returns the minimum value of the objective function `f_min`. This is independent of
+        the noise.
+
+        Returns:
+            float: The minimum value of the objective function (SumOfQ instance).
+        """
         return self.instance.f_min
 
 
 class MultipleObjectives(AbstractFunction):
     """
+    Multiple Objectives - o3
     This benchmark resembles algorithm configuration scenarios where multiple objective need
     to be optimized simultaneously. It incorporates mathematical test
     functions that feature a set of Pareto-optimal solutions.
     """
 
-    def __init__(
-        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
-    ) -> None:
+    def __init__(self, dim: int, seed: int | None = None, loggers: list | None = None) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
-        self.name = name
         self.rng = np.random.default_rng(seed=seed)
 
         if self.name.lower() == "zdt1":
@@ -791,16 +1073,45 @@ class MultipleObjectives(AbstractFunction):
 
 
 class TimeDependentOP(AbstractFunction):
+    """
+    Time-Dependent Order-Preserving - o4
+    A benchmark modeling order-preserving time-dependent objective functions.
+    This benchmark simulates scenarios where the environment or objective function changes
+    over time, but the changes preserve the order of the original function.
+
+    The class supports two types of time-dependent behaviors:
+    - Linear Drift: A gradual and consistent change in the objective function over time.
+    - Oscillations: Periodic fluctuations in the objective function.
+    """
+
     def __init__(
         self,
-        name: str,
         dim: int,
+        name: str = "linear_drift",
+        a: float = 1.0,
+        b: float = 0.005,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            name (str): Defines the type of time-dependent behavior. Must be one of
+                "linear_drift" or "oscillations". Defaults to "linear_drift".
+            a (float): The linear offset that is added to the time-dependent term.
+                Defaults to 1.0.
+            b (float): The factor that scales the time measure in the time-dependent term.
+                Defaults to 0.005.
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
-        self.benchmark_name = "o4"
+        self.benchmark_name = "o4.1"
         self.name = name
+        self.a = a
+        self.b = b
         self.rng = np.random.default_rng(seed=seed)
         self.timer = 0
 
@@ -819,36 +1130,67 @@ class TimeDependentOP(AbstractFunction):
         )
 
     def _function_linear_drift(self, x: ndarray) -> float:
-        return self.instance._function(x=x) + (1 + 0.005 * self.timer)
+        return self.instance._function(x=x) + (self.a + self.b * self.timer)
 
     def _function_oscillations(self, x: ndarray) -> float:
-        return self.instance._function(x=x) + 0.005 * math.sin(1 + self.timer)
+        return self.instance._function(x=x) + self.b * math.sin(self.a + self.timer)
 
     def _function(self, x: ndarray) -> float:
         return self.function(x=x)
 
     @property
     def x_min(self) -> np.ndarray | None:
-        # TODO
-        pass
+        """
+        Returns the minimum of the benchmark function. The minimum is independent of the
+        time-dependent sum that is added to the function value, because is is order-preserving.
+        """
+        return self.instance.x_min
 
     @property
     def f_min(self) -> float:
-        # TODO
-        pass
+        return self.instance.f_min
 
 
 class TimeDependentNOP(AbstractFunction):
+    """
+    Time-Dependent Non-Order-Preserving - o4.2
+    A benchmark modeling order-disrupting time-dependent objective functions.
+    This benchmark simulates scenarios where the environment or objective function changes
+    over time, and the changes do not preserve the order of the original function.
+
+    The class supports two types of time-dependent behaviors:
+    - Linear Drift: A steady linear change in the optimal parameter values over time.
+    - Oscillations: Periodic shifts in the optimal parameter values.
+    """
+
     def __init__(
         self,
-        name: str,
         dim: int,
+        name: str = "linear_drift",
+        a: float = 1.0,
+        b: float = 0.005,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            name (str): Defines the type of time-dependent behavior. Must be one of
+                "linear_drift" or "oscillations". Defaults to "linear_drift".
+            a (float): The linear offset that is added to the time-dependent term.
+                Defaults to 1.0.
+            b (float): The factor that scales the time measure in the time-dependent term.
+                Defaults to 0.005.
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
-        self.benchmark_name = "o4"
+        self.benchmark_name = "o4.2"
         self.name = name
+        self.a = a
+        self.b = b
         self.rng = np.random.default_rng(seed=seed)
         self.timer = 0
 
@@ -879,11 +1221,11 @@ class TimeDependentNOP(AbstractFunction):
         )
 
     def _function_oscillations(self, x: ndarray) -> float:
-        lmd = 1 + math.sin(0.005 * self.timer)
+        lmd = self.a + math.sin(self.b * self.timer)
         return np.sum((x - lmd) ** 2)
 
     def _function_linear_drift(self, x: ndarray) -> float:
-        lmd = 1 + 0.005 * self.timer
+        lmd = self.a + self.b * self.timer
         return np.sum((x - lmd) ** 2)
 
     def _function(self, x: ndarray) -> float:
@@ -891,7 +1233,7 @@ class TimeDependentNOP(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
-        # TODO
+        # TODO min
         pass
 
     @property
@@ -902,6 +1244,7 @@ class TimeDependentNOP(AbstractFunction):
 
 class CensoredObjective(AbstractFunction):
     """
+    Censored Objective - o5
     This benchmark resembles algorithm configuration settings where certain qualities cannot
     be observed. E.g., when optimizing for runtime there is a cutoff on the evaluation time of
     a single algorithm configuration and only lower bounds can be observed for configurations
@@ -913,10 +1256,14 @@ class CensoredObjective(AbstractFunction):
 
     def __init__(self, cutoff: float, wrapped_bench: AbstractFunction):
         """
-        cutoff: Percentage of objective function value that is still reported. Values above
-        the threshold will be censored.
-        The cutoff is determined relative to the wrapped function's optimum.
-        wrapped_bench: another benchmark function that is wrapped into this one.
+        Initializes the benchmark.
+
+        Args:
+            cutoff (float): Percentage of objective function value that is still reported.
+                Values above the threshold will be censored.
+                The cutoff is determined relative to the wrapped function's optimum.
+            wrapped_bench (AbstractFunction): Another benchmark function that is wrapped into
+                this one.
         """
         self.cutoff = cutoff
         self.wrapped_bench = wrapped_bench
@@ -949,6 +1296,7 @@ class CensoredObjective(AbstractFunction):
 
 class Multimodal(AbstractFunction):
     """
+    Multimodal - o6
     This benchmark simulates algorithm configuration scenarios where the objective function
     landscape is highly multi-modal, featuring multiple local optima, some of which could be
     near the global optimum. It incorporates a variety of mathematical test functions
@@ -956,11 +1304,16 @@ class Multimodal(AbstractFunction):
     determines the scaling factor applied to the function values.
     """
 
-    def __init__(
-        self, name: str, dim: int, seed: int | None = None, loggers: list | None = None
-    ) -> None:
+    def __init__(self, dim: int, seed: int | None = None, loggers: list | None = None) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
-        self.name = name
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
 
@@ -985,13 +1338,32 @@ class Multimodal(AbstractFunction):
 
 
 class SinglePeak(AbstractFunction):
+    """
+    Single Peak - o7
+    A benchmark representing a single "peak" in the search space where a specific subspace
+    (a hyper-cube) yields a value of 0.0, while all other regions yield a value of 1.0.
+
+    The "peak" is defined by a width parameter (`peak_width`) and spans a hyper-cube region
+    within the search space.
+    """
+
     def __init__(
         self,
         dim: int,
-        peak_width: float,
+        peak_width: float = 0.01,
         loggers: list | None = None,
         seed: int | None = None,
     ) -> None:
+        """
+        Initializes the benchmark.
+
+        Args:
+            dim (int): The number of parameters to be optimized (dimensions).
+            peak_width (float): The percentage of each parameters' domain that returns the
+                minimum. Must be between 0.0 and 1.0. Defaults to 0.01.
+            seed (int | None, optional): Random seed for reproducibility. Default is None.
+            loggers (list | None, optional): List of logger objects. Default is None.
+        """
         super().__init__(seed, dim, loggers)
         self.rng = np.random.default_rng(seed=seed)
         self.lower_bound = -100
@@ -1032,8 +1404,7 @@ class SinglePeak(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
-        # TODO
-        pass
+        return [self.lower_ends, self.lower_ends + self.abs_peak_width]
 
     @property
     def f_min(self) -> float:

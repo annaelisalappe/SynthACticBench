@@ -19,7 +19,6 @@ class Griewank(AbstractFunction):
         self.upper_bounds = [600] * self.dim
         self._make_coefficients()
 
-
     def _create_config_space(self):
         return ConfigurationSpace(
             {
@@ -60,8 +59,11 @@ class Griewank(AbstractFunction):
         x = np.atleast_2d(x)  # Ensure x is at least 2D
         d = x.shape[1]  # Dimensionality of the input
         sum_term = np.sum(x**2, axis=1) / 4000  # Sum of x_i^2 divided by 4000
-        prod_term = np.prod(np.cos(x / np.sqrt(np.arange(1, d + 1))), axis=1)  # Product of cos(x_i / sqrt(i))
+        prod_term = np.prod(
+            np.cos(x / np.sqrt(np.arange(1, d + 1))), axis=1
+        )  # Product of cos(x_i / sqrt(i))
         return self.coefficients[0] * (1 + sum_term - prod_term)
+
 
 class Rosenbrock(AbstractFunction):
     def __init__(
@@ -256,12 +258,13 @@ class ZDT3(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
-
-        regions = [[0, 0.0830015349],
-                   [0.182228780, 0.2577623634],
-                   [0.4093136748, 0.4538821041],
-                   [0.6183967944, 0.6525117038],
-                   [0.8233317983, 0.8518328654]]
+        regions = [
+            [0, 0.0830015349],
+            [0.182228780, 0.2577623634],
+            [0.4093136748, 0.4538821041],
+            [0.6183967944, 0.6525117038],
+            [0.8233317983, 0.8518328654],
+        ]
         num_points_per_region = 20  # Number of points to discretize each region
         x_min = []
         for lower, upper in regions:
@@ -273,14 +276,15 @@ class ZDT3(AbstractFunction):
 
         return np.array(x_min)
 
-
     @property
     def f_min(self):
-        regions = [[0, 0.0830015349],
-                   [0.182228780, 0.2577623634],
-                   [0.4093136748, 0.4538821041],
-                   [0.6183967944, 0.6525117038],
-                   [0.8233317983, 0.8518328654]]
+        regions = [
+            [0, 0.0830015349],
+            [0.182228780, 0.2577623634],
+            [0.4093136748, 0.4538821041],
+            [0.6183967944, 0.6525117038],
+            [0.8233317983, 0.8518328654],
+        ]
 
         pf = []
         for r in regions:
@@ -289,7 +293,6 @@ class ZDT3(AbstractFunction):
             pf.append(np.array([x1, x2]).T)
 
         return np.row_stack(pf)
-
 
 
 class SumOfQ(AbstractFunction):
@@ -307,6 +310,13 @@ class SumOfQ(AbstractFunction):
         print(f"Lower bound: {self.lower_bounds[0]}, {len(self.lower_bounds)}")
         self._make_coefficients()
 
+    def get_value_in_single_dim(self, x: float, i: int) -> float:
+        a, b, c = (
+            self.coefficients[i, 0],
+            self.coefficients[i, 1],
+            self.coefficientsi[i, 2],
+        )
+        return a * x**2 + b * x + c
 
     def _create_config_space(self):
         return ConfigurationSpace(
@@ -320,6 +330,7 @@ class SumOfQ(AbstractFunction):
             },
             seed=self.seed,
         )
+
     def _make_coefficients(self) -> np.ndarray:
         generator = np.random.default_rng(seed=self.seed)
 
@@ -333,6 +344,9 @@ class SumOfQ(AbstractFunction):
         Returns:
             np.ndarray: Array of minima for each dimension.
         """
+        if self._x_min:
+            return self._x_min
+
         a, b, c = (
             self.coefficients[:, 0],
             self.coefficients[:, 1],
@@ -350,10 +364,13 @@ class SumOfQ(AbstractFunction):
                 # Quadratic is not convex, evaluate at the boundaries
                 x_left = self.lower_bounds[i]
                 x_right = self.upper_bounds[i]
-                y_left = a[i] * x_left ** 2 + b[i] * x_left + c[i]
-                y_right = a[i] * x_right ** 2 + b[i] * x_right + c[i]
+                y_left = a[i] * x_left**2 + b[i] * x_left + c[i]
+                y_right = a[i] * x_right**2 + b[i] * x_right + c[i]
                 x_min.append(x_left if y_left < y_right else x_right)
-        return np.array(x_min)
+
+        self._x_min = np.array(x_min)
+
+        return self._x_min
 
     @property
     def f_min(self) -> float:
