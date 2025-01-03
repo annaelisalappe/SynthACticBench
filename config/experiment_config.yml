@@ -9,28 +9,24 @@ PY_EXPERIMENTER:
       keyfields:
         benchmarklib:
           type: VARCHAR(255)
-          values: ['jahs']
+          values: ['synthacticbench']
         scenario:
           type: VARCHAR(255)
-          values: ['default']
-        dataset:
+          values: ['c1', 'c2-ackley', 'c2-rosenbrock', 'c3', 'c4', 'c5', 'c6', 'c7', 'o1', 'o2', 'o3', 'o4-OP','o4-NOP', 'o5', 'o6', 'o7']
+        algorithm_configurator:
           type: VARCHAR(255)
-          values: ['CIFAR10','ColorectalHistology','FashionMNIST']
-        metric:
-          type: VARCHAR(255)
-          values: ['default']
-        game:
-          type: VARCHAR(255)
-          values: ['data_specific_tunability']
-        argmax_n_configs:
+          values: ['smac']
+        n_trials:
           type: INT
-          values: [10000]
+          values: [100,1000]
         seed:
           type: INT
-          values: [42]
+          values: [0,1,2,3,4]
       result_timestamps: False
       resultfields:
-        setup_time: VARCHAR(255)
-        normalization_value: VARCHAR(255)
-        storage_path: VARCHAR(255)
+        incumbent: TEXT
+        f_min: VARCHAR(255)
+        regret: VARCHAR(255)
+        incumbent_cost: VARCHAR(255)
+        incumbent_found_at: VARCHAR(255)
         done: VARCHAR(50)

@@ -1,8 +1,8 @@
 import argparse
 
-from carps.utils.running import make_optimizer
+from carps.utils.running import make_optimizer, make_problem
 from carps.utils.trials import TrialInfo, TrialValue
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from py_experimenter.experimenter import PyExperimenter
 from py_experimenter.result_processor import ResultProcessor
 from rich import inspect
@@ -14,27 +14,79 @@ EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
 def run_config(config: dict, result_processor: ResultProcessor, custom_config: dict):
-    # parse config to instantiate benchmark problem and optimizer
-    synthactic = SynthACticBenchProblem(RelevantParameters(num_quadratic=4, dim=10, seed=42))
-    inspect(synthactic)
+    algorithm_configurator_name = config["algorithm_configurator"]
+    scenario = config["scenario"]
+    seed: int = int(config["seed"])
 
-    # ToDo: What optimizers to consider and how to configure them?
-    opt_cfg = DictConfig()
-    optimizer = make_optimizer(opt_cfg, synthactic)
-    inspect(optimizer)
+    if scenario == "c1":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/RelevantParameters.yaml")
+    elif scenario == "c2-ackley":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-ackley.yaml")
+    elif scenario == "c2-rosenbrock":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-rosenbrock.yaml")
+    elif scenario == "c3":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/MixedType.yaml")
+    elif scenario == "c4":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/ActivationStructures.yaml")
+    elif scenario == "c5":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/ConditionalParameterDomains.yaml")
+    elif scenario == "c6":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/HierarchicalSearchSpaces.yaml")
+    elif scenario == "c7":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/InvalidParametrisation.yaml")
+    elif scenario == "o1":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/DeterministicObjective.yaml")
+    elif scenario == "o2":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/NoisyEvaluation.yaml")
+    elif scenario == "o3":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/MultipleObjectives.yaml")
+    elif scenario == "o4-OP":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/TimeDependentOP.yaml")
+    elif scenario == "o4-NOP":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/TimeDependentNOP.yaml")
+    elif scenario == "o5":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/Censored.yaml")
+    elif scenario == "o6":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/MultiModal.yaml")
+    elif scenario == "o7":
+        problem_task_cfg = OmegaConf.load("synthacticbench/configs/problem/SynthACticBench/SinglePeak.yaml")
+    else:
+        raise Exception("SynthACticBench scenario unknown")
+    synthactic_problem = make_problem(problem_task_cfg)
+    inspect(synthactic_problem)
+
+    algorithm_configurator_cfg = None
+    if algorithm_configurator_name == "smac":
+        algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
+        algorithm_configurator_cfg.outdir = "smac_out"
+
+    algorithm_configurator_cfg.merge_with(problem_task_cfg)
+    algorithm_configurator_cfg.seed = seed
+
+    algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
+    inspect(algorithm_configurator)
 
     # obtain incumbent through running the optimizer
     # ToDo: How to access the optimization trace?
-    inc_tuple = optimizer.run()
+    inc_tuple = algorithm_configurator.run()
 
+    f_min = synthactic_problem.f_min
     trial_info: TrialInfo = inc_tuple[0]
     trial_value: TrialValue = inc_tuple[1]
 
-    result_processor.process_results({
+    res = {
+        "f_min": f_min,
+        "regret": trial_value.cost - f_min,
         "incumbent": str(trial_info.config),
         "incumbent_cost": str(trial_value.cost),
-        "incumbent_found_at": str(trial_value.virtual_time)
-    })
+        "incumbent_found_at": str(trial_value.virtual_time),
+        "done": "true"
+    }
+    print(res)
+
+    result_processor.process_results(res)
+
+
 def setup_table(experimenter: PyExperimenter):
     experimenter.fill_table_from_config()
 
@@ -62,6 +114,6 @@ if __name__ == "__main__":
         setup_table(experimenter)
 
     if args.exec != 0:
-        run_experiments(experimenter, args.exec)
+        run_experiments(experimenter, int(args.exec))
 
 

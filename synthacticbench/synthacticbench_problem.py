@@ -25,4 +25,4 @@ class SynthACticBenchProblem(Problem):
 
     @property
     def f_min(self) -> float | None:
-        return self.function.f_min()
+        return self.function.f_min
