@@ -12,9 +12,12 @@ class Griewank(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.lower_bounds = [-600] * self.dim
         self.upper_bounds = [600] * self.dim
         self._make_coefficients()
@@ -70,9 +73,12 @@ class Rosenbrock(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.lower_bounds = [-5] * self.dim
         self.upper_bounds = [10] * self.dim
         self._make_coefficients()
@@ -121,9 +127,12 @@ class Ackley(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.lower_bounds = [-32.768] * self.dim
         self.upper_bounds = [32.768] * self.dim
         self._make_coefficients()
@@ -172,9 +181,12 @@ class ZDT1(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
 
     def _create_config_space(self):
         lower_bounds = [0] * self.dim
@@ -228,9 +240,12 @@ class ZDT3(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
 
     def _create_config_space(self):
         lower_bounds = [0] * self.dim
@@ -302,9 +317,12 @@ class SumOfQ(AbstractFunction):
         dim: int | None = None,
         lower_bounds: list[float] | None = None,
         upper_bounds: list[float] | None = None,
+        instance_parameter: float = 0.0,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.lower_bounds = lower_bounds or [-100] * self.dim
         self.upper_bounds = upper_bounds or [100] * self.dim
         print(f"Lower bound: {self.lower_bounds[0]}, {len(self.lower_bounds)}")

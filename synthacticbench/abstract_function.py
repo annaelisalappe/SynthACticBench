@@ -11,10 +11,12 @@ class AbstractFunction(Problem):
     def __init__(
         self,
         seed: int,
+        instance_parameter: float,
         dim: int | None = None,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
         super().__init__(loggers=loggers)
+        self.instance_parameter = instance_parameter
         self.seed = seed
         self.dim = dim
 
@@ -26,7 +28,8 @@ class AbstractFunction(Problem):
         config = trial_info.config
         x = np.array(list(config.values()))
         cost = self._function(x=x)
-        return TrialValue(cost=cost)
+        inst_cost = cost + self.instance_parameter
+        return TrialValue(cost=inst_cost)
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         ...

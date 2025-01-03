@@ -41,6 +41,7 @@ class RelevantParameters(AbstractFunction):
         noise_low: float = -100,
         noise_high=100,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -58,7 +59,9 @@ class RelevantParameters(AbstractFunction):
             loggers (list or None, optional): Optional list of loggers for logging.
                 Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.noise_low = noise_low
         self.noise_high = noise_high
         self.num_quadratic = num_quadratic
@@ -146,6 +149,7 @@ class ParameterInteractions(AbstractFunction):
         dim: int,
         name: str = "ackley",
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -159,7 +163,9 @@ class ParameterInteractions(AbstractFunction):
             loggers (list or None, optional): Optional list of loggers for logging.
                 Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.benchmark_name = "C2"
         self.name = name
         self.dim = dim
@@ -202,6 +208,7 @@ class MixedTypes(AbstractFunction):
         share_int: float,
         share_float: float,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -222,7 +229,9 @@ class MixedTypes(AbstractFunction):
             number of all parameters to give the share of that parameter type over the
             dimension dim.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
 
         # normalize shares
         share_sum = share_cat + share_bool + share_int + share_float
@@ -316,6 +325,7 @@ class ActivationStructures(AbstractFunction):
         dim: int,
         groups: int = 1,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -329,7 +339,9 @@ class ActivationStructures(AbstractFunction):
             loggers (list or None, optional): Optional list of loggers for logging.
                 Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
 
         self._x_min = None
 
@@ -427,6 +439,7 @@ class ShiftingDomains(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -438,7 +451,9 @@ class ShiftingDomains(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.benchmark_name = "c5"
         self.rng = np.random.default_rng(seed=seed)
 
@@ -549,6 +564,7 @@ class HierarchicalStructures(AbstractFunction):
         groups: int,
         subgroups_per_group: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -561,7 +577,9 @@ class HierarchicalStructures(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         assert groups * subgroups_per_group <= dim - 2, (
             "The total number of subgroups "
             f"(groups * subgroups_per_group = {groups * subgroups_per_group}) "
@@ -716,6 +734,7 @@ class InvalidParameterization(AbstractFunction):
         dim: int,
         cube_size: float,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -728,7 +747,9 @@ class InvalidParameterization(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.benchmark_name = "c7"
 
         self.rng = np.random.default_rng(seed=seed)
@@ -835,6 +856,7 @@ class MixedDomains(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -845,7 +867,9 @@ class MixedDomains(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
 
         self.rng = np.random.default_rng(seed=seed)
 
@@ -899,7 +923,12 @@ class DeterministicObjective(AbstractFunction):
 
     def __init__(self, wrapped_bench: AbstractFunction):
         self.wrapped_bench = wrapped_bench
-        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+        super().__init__(
+            seed=wrapped_bench.seed,
+            dim=wrapped_bench.dim,
+            instance_parameter=wrapped_bench.instance_parameter,
+            loggers=wrapped_bench.loggers,
+        )
         self.benchmark_name = "o1"
         self._configspace = self._create_config_space()
 
@@ -937,6 +966,7 @@ class NoisyEvaluation(AbstractFunction):
         dim: int,
         distribution: str = "uniform",
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
         **kwargs,
     ) -> None:
@@ -950,7 +980,9 @@ class NoisyEvaluation(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
 
@@ -1023,7 +1055,13 @@ class MultipleObjectives(AbstractFunction):
     functions that feature a set of Pareto-optimal solutions.
     """
 
-    def __init__(self, dim: int, seed: int | None = None, loggers: list | None = None) -> None:
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        instance_parameter: float = 0.0,
+        loggers: list | None = None,
+    ) -> None:
         """
         Initializes the benchmark.
 
@@ -1032,7 +1070,9 @@ class MultipleObjectives(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.rng = np.random.default_rng(seed=seed)
 
         if self.name.lower() == "zdt1":
@@ -1091,6 +1131,7 @@ class TimeDependentOP(AbstractFunction):
         a: float = 1.0,
         b: float = 0.005,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -1107,7 +1148,9 @@ class TimeDependentOP(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.benchmark_name = "o4.1"
         self.name = name
         self.a = a
@@ -1170,6 +1213,7 @@ class TimeDependentNOP(AbstractFunction):
         a: float = 1.0,
         b: float = 0.005,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -1186,7 +1230,9 @@ class TimeDependentNOP(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.benchmark_name = "o4.2"
         self.name = name
         self.a = a
@@ -1267,7 +1313,12 @@ class CensoredObjective(AbstractFunction):
         """
         self.cutoff = cutoff
         self.wrapped_bench = wrapped_bench
-        super().__init__(wrapped_bench.seed, wrapped_bench.dim, wrapped_bench.loggers)
+        super().__init__(
+            seed=wrapped_bench.seed,
+            dim=wrapped_bench.dim,
+            instance_parameter=wrapped_bench.instance_parameter,
+            loggers=wrapped_bench.loggers,
+        )
         self.benchmark_name = "o5"
         self._configspace = self._create_config_space()
 
@@ -1304,7 +1355,13 @@ class Multimodal(AbstractFunction):
     determines the scaling factor applied to the function values.
     """
 
-    def __init__(self, dim: int, seed: int | None = None, loggers: list | None = None) -> None:
+    def __init__(
+        self,
+        dim: int,
+        seed: int | None = None,
+        instance_parameter: float = 0.0,
+        loggers: list | None = None,
+    ) -> None:
         """
         Initializes the benchmark.
 
@@ -1313,7 +1370,9 @@ class Multimodal(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
 
@@ -1351,8 +1410,9 @@ class SinglePeak(AbstractFunction):
         self,
         dim: int,
         peak_width: float = 0.01,
-        loggers: list | None = None,
         seed: int | None = None,
+        instance_parameter: float = 0.0,
+        loggers: list | None = None,
     ) -> None:
         """
         Initializes the benchmark.
@@ -1364,7 +1424,9 @@ class SinglePeak(AbstractFunction):
             seed (int | None, optional): Random seed for reproducibility. Default is None.
             loggers (list | None, optional): List of logger objects. Default is None.
         """
-        super().__init__(seed, dim, loggers)
+        super().__init__(
+            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+        )
         self.rng = np.random.default_rng(seed=seed)
         self.lower_bound = -100
         self.upper_bound = 100

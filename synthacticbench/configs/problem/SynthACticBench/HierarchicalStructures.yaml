@@ -1,10 +1,13 @@
 # @package _global_
+instance_parameter: 0.0
+
 benchmark_id: SynthACticBench
 problem_id: HierarchicalStructures
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
     _target_: synthacticbench.functions.HierarchicalStructures
+    instance_parameter: ${instance_parameter}
     dim: 10
     groups: 3
     subgroups_per_group: 2

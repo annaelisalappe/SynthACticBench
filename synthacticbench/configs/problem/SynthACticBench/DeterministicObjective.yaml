@@ -1,15 +1,18 @@
 # @package _global_
+instance_parameter: 0.0
+
 benchmark_id: SynthACticBench
 problem_id: DeterministicObjective
 problem:
-    _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
-    function:
-        _target_: synthacticbench.functions.DeterministicObjective
-        wrapped_bench:
-          _target_: synthacticbench.functions.NoisyEvaluation
-          dim: 10
-          seed: 52
-          distribution: no_noise
+  _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
+  function:
+    _target_: synthacticbench.functions.DeterministicObjective
+    instance_parameter: ${instance_parameter}
+    wrapped_bench:
+      _target_: synthacticbench.functions.NoisyEvaluation
+      dim: 10
+      seed: 52
+      distribution: no_noise
 task:
   n_trials: 100
   time_budget: null
