@@ -22,17 +22,24 @@ function_classes = [
 ]
 
 CONFIG_PATHS = [
-    "synthacticbench/configs/problem/SynthACticBench/RelevantParameters.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/InvalidParameterization.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/NoisyEvaluation.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-rosenbrock.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/ParameterInteractions-ackley.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/ActivationStructures.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/SinglePeak.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/MixedDomains.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/ShiftingDomains.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/TimeDependentOP.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/TimeDependentNOP.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-rosenbrock.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-ackley.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C8-MixedDomains.yaml",
+
+    "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjectives.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml",
 ]
 
 

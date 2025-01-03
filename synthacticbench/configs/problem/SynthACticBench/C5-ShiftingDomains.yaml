@@ -6,7 +6,7 @@ problem_id: ShiftingDomains
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.ShiftingDomains
+    _target_: synthacticbench.search_space_functions.ShiftingDomains
     instance_parameter: ${instance_parameter}
     dim: 20
     seed: 52

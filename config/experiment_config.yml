@@ -15,7 +15,7 @@ PY_EXPERIMENTER:
           values: ['c1', 'c2-ackley', 'c2-rosenbrock', 'c3', 'c4', 'c5', 'c6', 'c7', 'o1', 'o2', 'o3', 'o4-OP','o4-NOP', 'o5', 'o6', 'o7']
         algorithm_configurator:
           type: VARCHAR(255)
-          values: ['smac']
+          values: ['smac', 'random']
         n_trials:
           type: INT
           values: [100,1000]

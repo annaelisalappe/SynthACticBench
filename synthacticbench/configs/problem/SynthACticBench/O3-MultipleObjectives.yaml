@@ -2,17 +2,17 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: DeterministicObjective
+problem_id: NoisyEvaluation
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.DeterministicObjective
+    _target_: synthacticbench.objective_functions.NoisyEvaluation
     instance_parameter: ${instance_parameter}
-    wrapped_bench:
-      _target_: synthacticbench.functions.NoisyEvaluation
-      dim: 10
-      seed: 52
-      distribution: no_noise
+    dim: 10
+    seed: 52
+    distribution: normal
+    mean: 0
+    stddev: 1
 task:
   n_trials: 100
   time_budget: null

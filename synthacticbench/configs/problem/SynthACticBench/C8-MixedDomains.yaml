@@ -2,14 +2,13 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: InvalidParameterization
+problem_id: MixedDomains
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.InvalidParameterization
+    _target_: synthacticbench.search_space_functions.MixedDomains
     instance_parameter: ${instance_parameter}
     dim: 10
-    cube_size: 0.05
     seed: 52
 task:
   n_trials: 100

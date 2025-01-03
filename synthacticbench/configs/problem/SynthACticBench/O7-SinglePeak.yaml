@@ -2,14 +2,14 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: TimeDependentOP
+problem_id: SinglePeak
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.TimeDependentOP
+    _target_: synthacticbench.objective_functions.SinglePeak
     instance_parameter: ${instance_parameter}
-    name: linear_drift
     dim: 10
+    peak_width: 0.001
     seed: 52
 task:
   n_trials: 100

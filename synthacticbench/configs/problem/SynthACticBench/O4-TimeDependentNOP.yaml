@@ -2,15 +2,14 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: HierarchicalStructures
+problem_id: TimeDependentNOP
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.HierarchicalStructures
+    _target_: synthacticbench.objective_functions.TimeDependentNOP
     instance_parameter: ${instance_parameter}
+    name: oscillations
     dim: 10
-    groups: 3
-    subgroups_per_group: 2
     seed: 52
 task:
   n_trials: 100
@@ -33,6 +32,6 @@ task:
   search_space_n_ordinals: 0
   search_space_n_integers: 0
   search_space_n_floats: 10
-  search_space_has_conditionals: true
+  search_space_has_conditionals: false
   search_space_has_forbiddens: false
   search_space_has_priors: false

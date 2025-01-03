@@ -2,17 +2,15 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: NoisyEvaluation
+problem_id: TimeDependentOP
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.functions.NoisyEvaluation
+    _target_: synthacticbench.objective_functions.TimeDependentOP
     instance_parameter: ${instance_parameter}
+    name: linear_drift
     dim: 10
     seed: 52
-    distribution: normal
-    mean: 0
-    stddev: 1
 task:
   n_trials: 100
   time_budget: null
@@ -28,7 +26,7 @@ task:
   domain: synthetic
   objective_function_approximation: real
   has_virtual_time: false
-  deterministic: false
+  deterministic: true
   dimensions: 10
   search_space_n_categoricals: 0
   search_space_n_ordinals: 0
