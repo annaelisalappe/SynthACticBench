@@ -333,7 +333,7 @@ class ActivationStructures(AbstractFunction):
 
         self._x_min = None
 
-        assert self.groups > 0, "Benchmark must have at least one group."
+        assert groups > 0, "Benchmark must have at least one group."
         self.groups = groups
         self.rng = np.random.default_rng(seed=seed)
 
