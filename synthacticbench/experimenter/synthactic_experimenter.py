@@ -7,9 +7,6 @@ from py_experimenter.experimenter import PyExperimenter
 from py_experimenter.result_processor import ResultProcessor
 from rich import inspect
 
-from synthacticbench.objective_functions import RelevantParameters
-from synthacticbench.synthacticbench_problem import SynthACticBenchProblem
-
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
@@ -64,6 +61,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
+    algorithm_configurator_cfg.task.n_trials=10
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
     inspect(algorithm_configurator)

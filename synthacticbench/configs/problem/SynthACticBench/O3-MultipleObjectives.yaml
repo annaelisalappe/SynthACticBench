@@ -6,13 +6,10 @@ problem_id: NoisyEvaluation
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.objective_functions.NoisyEvaluation
+    _target_: synthacticbench.objective_functions.MultipleObjectives
     instance_parameter: ${instance_parameter}
     dim: 10
     seed: 52
-    distribution: normal
-    mean: 0
-    stddev: 1
 task:
   n_trials: 100
   time_budget: null
