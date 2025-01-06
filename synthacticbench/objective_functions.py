@@ -469,6 +469,7 @@ class Multimodal(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
+        name: str | None = "ackley",
         instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
@@ -485,6 +486,7 @@ class Multimodal(AbstractFunction):
         )
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
+        self.name = name
 
         if self.name.lower() == "ackley":
             self.instance = Ackley(dim, seed)

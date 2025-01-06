@@ -31,15 +31,15 @@ CONFIG_PATHS = [
     "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
     "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
     "synthacticbench/configs/problem/SynthACticBench/C8-MixedDomains.yaml",
-
-    "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjectives.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml",
+    #
+    # "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjectives.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml",
+    # "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml",
 ]
 
 

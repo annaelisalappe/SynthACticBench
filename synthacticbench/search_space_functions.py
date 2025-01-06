@@ -4,8 +4,11 @@ import math
 
 import numpy as np
 from ConfigSpace import (
+    Categorical,
+    CategoricalHyperparameter,
     ConfigurationSpace,
     Float,
+    Integer,
 )
 from numpy import ndarray
 
@@ -15,6 +18,7 @@ from synthacticbench.base_functions import (
     ZDT3,
     Ackley,
     Griewank,
+    Rosenbrock,
     SumOfQ,
 )
 
@@ -839,29 +843,6 @@ class InvalidParameterization(AbstractFunction):
     def f_min(self) -> float:
         return self.instance._function(self.x_min)
 
-from __future__ import annotations
-
-import math
-
-import numpy as np
-from ConfigSpace import (
-    Categorical,
-    CategoricalHyperparameter,
-    ConfigurationSpace,
-    Float,
-    Integer,
-)
-from numpy import ndarray
-
-from synthacticbench.abstract_function import AbstractFunction
-from synthacticbench.base_functions import (
-    ZDT1,
-    ZDT3,
-    Ackley,
-    Griewank,
-    Rosenbrock,
-    SumOfQ,
-)
 
 class MixedDomains(AbstractFunction):
     """
