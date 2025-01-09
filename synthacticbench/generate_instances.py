@@ -12,7 +12,6 @@ def generate_instances(
     output_dir: str | None = None,
     seed: int = 100,
     num_instances: int = 100,
-    mean: float = 1.0,
     std: float = 1.0,
 ):
     # Load the original YAML configuration
@@ -25,6 +24,7 @@ def generate_instances(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Sample values for the instance_parameter
+    mean = 0
     instance_generator = np.random.default_rng(seed=seed)
     sampled_values = instance_generator.normal(loc=mean, scale=std, size=num_instances)
 
@@ -66,12 +66,6 @@ if __name__ == "__main__":
         help="Number of instances to generate.",
     )
     parser.add_argument(
-        "--mean",
-        type=float,
-        default=0.0,
-        help="Mean of the normal distribution (default: 0.0).",
-    )
-    parser.add_argument(
         "--std",
         type=float,
         default=1.0,
@@ -84,6 +78,5 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         seed=args.seed,
         num_instances=args.instances,
-        mean=args.mean,
         std=args.std,
     )
