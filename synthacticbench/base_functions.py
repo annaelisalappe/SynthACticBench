@@ -204,16 +204,23 @@ class ZDT1(AbstractFunction):
         )
 
     def _function(self, x: np.ndarray) -> np.ndarray:
-        if self.dim == 1:
-            x = np.expand_dims(x, axis=1)
-        f1 = x[0]
+        # If x is a 1D array, expand it to a 2D array (1, dim)
+        if x.ndim == 1:
+            x = np.expand_dims(x, axis=0)
+
+        # Initialize arrays to store the function values
+        f1 = x[:, 0]  # First objective is just the first element of each row
         if self.dim > 1:
-            g = 1 + 9 * np.sum(x[1:]) / (self.dim - 1)
-            f2 = g * (1 - np.sqrt(f1 / g))
+            # Compute the second objective
+            g = 1 + 9 * np.sum(x[:, 1:], axis=1) / (
+                self.dim - 1
+            )  # Sum over the remaining dimensions
+            f2 = 1 - np.sqrt(f1 / g)
         else:
             f2 = 1 - np.sqrt(f1)
 
-        return np.array([f1, f2])
+        # Stack f1 and f2 into the output array
+        return np.vstack((f1, f2)).T  # Shape (n, 2)
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -263,13 +270,23 @@ class ZDT3(AbstractFunction):
         )
 
     def _function(self, x: np.ndarray) -> np.ndarray:
-        if self.dim == 1:
-            x = np.expand_dims(x, axis=1)
-        f1 = x[0]
-        g = 1 + 9 * np.sum(x[1:]) / (self.dim - 1)
-        f2 = g * (1 - np.sqrt(f1 / g) - (f1 / g) * np.sin(10 * np.pi * f1))
+        # If x is a 1D array, expand it to a 2D array (1, dim)
+        if x.ndim == 1:
+            x = np.expand_dims(x, axis=0)
 
-        return np.array([f1, f2])
+        # Extract the first objective
+        f1 = x[:, 0]  # First objective is just the first element of each row
+
+        # Compute g for each sample in the batch
+        g = 1 + 9 * np.sum(x[:, 1:], axis=1) / (
+            self.dim - 1
+        )  # Sum over the remaining dimensions
+
+        # Compute the second objective
+        f2 = 1 - np.sqrt(f1 / g) - (f1 / g) * np.sin(10 * np.pi * f1)
+
+        # Stack f1 and f2 into the output array
+        return np.vstack((f1, f2)).T  # Shape (n, 2)
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -327,12 +344,14 @@ class SumOfQ(AbstractFunction):
         self.upper_bounds = upper_bounds or [100] * self.dim
         print(f"Lower bound: {self.lower_bounds[0]}, {len(self.lower_bounds)}")
         self._make_coefficients()
+        self._x_min = None
+        self.x_min_computed = False
 
     def get_value_in_single_dim(self, x: float, i: int) -> float:
         a, b, c = (
             self.coefficients[i, 0],
             self.coefficients[i, 1],
-            self.coefficientsi[i, 2],
+            self.coefficients[i, 2],
         )
         return a * x**2 + b * x + c
 
@@ -362,7 +381,7 @@ class SumOfQ(AbstractFunction):
         Returns:
             np.ndarray: Array of minima for each dimension.
         """
-        if self._x_min:
+        if self.x_min_computed:
             return self._x_min
 
         a, b, c = (
@@ -387,7 +406,7 @@ class SumOfQ(AbstractFunction):
                 x_min.append(x_left if y_left < y_right else x_right)
 
         self._x_min = np.array(x_min)
-
+        self.x_min_computed = True
         return self._x_min
 
     @property
@@ -409,5 +428,4 @@ class SumOfQ(AbstractFunction):
             self.coefficients[:, 1],
             self.coefficients[:, 2],
         )
-
         return np.sum(a * x**2 + b * x + c)

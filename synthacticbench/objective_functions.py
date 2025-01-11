@@ -286,7 +286,7 @@ class TimeDependentOP(AbstractFunction):
         return self.instance._function(x=x) + (self.a + self.b * self.timer)
 
     def _function_oscillations(self, x: ndarray) -> float:
-        return self.instance._function(x=x) + self.b * math.sin(self.a + self.timer)
+        return self.instance._function(x=x) + self.a * math.sin(self.b + self.timer)
 
     def _function(self, x: ndarray) -> float:
         return self.function(x=x)
@@ -295,7 +295,7 @@ class TimeDependentOP(AbstractFunction):
     def x_min(self) -> np.ndarray | None:
         """
         Returns the minimum of the benchmark function. The minimum is independent of the
-        time-dependent sum that is added to the function value, because is is order-preserving.
+        time-dependent sum that is added to the function value, because is order-preserving.
         """
         return self.instance.x_min
 
@@ -578,7 +578,7 @@ class SinglePeak(AbstractFunction):
 
     @property
     def x_min(self) -> np.ndarray | None:
-        return [self.lower_ends, self.lower_ends + self.abs_peak_width]
+        return [self.lower_ends, self.lower_ends + self.abs_peak_width - 1e-8]
 
     @property
     def f_min(self) -> float:

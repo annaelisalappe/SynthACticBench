@@ -14,8 +14,6 @@ from numpy import ndarray
 
 from synthacticbench.abstract_function import AbstractFunction
 from synthacticbench.base_functions import (
-    ZDT1,
-    ZDT3,
     Ackley,
     Griewank,
     Rosenbrock,
@@ -119,7 +117,7 @@ class RelevantParameters(AbstractFunction):
                 with `None` for the noisy parameters.
         """
         x_mins_quadr = self.instance.x_min
-        x_mins_noisy = np.array((None) * self.num_noisy)
+        x_mins_noisy = np.array([None] * self.num_noisy)
 
         return np.concatenate((x_mins_quadr, x_mins_noisy), axis=0)
 
@@ -349,6 +347,15 @@ class ActivationStructures(AbstractFunction):
         self.groups = groups
         self.rng = np.random.default_rng(seed=seed)
 
+        dim_without_categorical = self.dim - 1
+
+        min_group_size = dim_without_categorical // self.groups
+        remainder = dim_without_categorical % self.groups
+        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+            self.groups - remainder
+        )
+        self.group_dims = group_dims
+
         self.instances = self._make_groups()
 
         self._configspace = self._create_config_space()
@@ -374,21 +381,14 @@ class ActivationStructures(AbstractFunction):
         instances = {}
         x_i = 0
 
-        dim_without_categorical = self.dim - 1
-
-        min_group_size = dim_without_categorical // self.groups
-        remainder = dim_without_categorical % self.groups
-        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
-            self.groups - remainder
-        )
         group_seeds = self.rng.integers(low=0, high=1000, size=self.groups)
 
         for i in range(self.groups):
             instances[i] = {
-                "function": SumOfQ(seed=group_seeds[i], dim=group_dims[i]),
+                "function": SumOfQ(seed=group_seeds[i], dim=self.group_dims[i]),
                 "starts_at": x_i,
             }
-            x_i += group_dims[i]
+            x_i += self.group_dims[i]
 
         return instances
 
@@ -400,12 +400,24 @@ class ActivationStructures(AbstractFunction):
         return instance._function(x)
 
     def _calculate_x_min(self):
+        x_mins = [[None] * group_dim for group_dim in self.group_dims]
+        x_min_init = [item for sublist in x_mins for item in sublist]
+
         current_best_f = math.inf
 
+        cat_of_x_min = None
         for cat, func in self.instances.items():
             if func["function"].f_min < current_best_f:
-                x_min = [*list(func["function"].x_min), cat]
+                cat_of_x_min = cat
+                x_min = [
+                    float(val) if isinstance(val, np.float64) else val
+                    for val in func["function"].x_min
+                ]
 
+        instance = self.instances[cat_of_x_min]["function"]
+        starts_at = self.instances[cat_of_x_min]["starts_at"]
+        x_min_init[starts_at : starts_at + instance.dim] = x_min
+        x_min = [*x_min_init, cat_of_x_min]
         self._x_min = x_min
 
     @property
@@ -589,11 +601,31 @@ class HierarchicalStructures(AbstractFunction):
         self.groups = groups
         self.subgroups_per_group = subgroups_per_group
         self.rng = np.random.default_rng(seed=seed)
+        # Determine dimensions for groups and subgroups
+        self._init_dims()
 
         self.instances = self._make_hierarchical_groups()
 
         self._configspace = self._create_config_space()
         self.benchmark_name = "c6"
+
+    def _init_dims(self):
+        self.total_subgroups = self.groups * self.subgroups_per_group
+        self.dim_without_categorical = self.dim - 2
+        min_group_size = self.dim_without_categorical // self.groups
+        remainder = self.dim_without_categorical % self.groups
+        group_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+            self.groups - remainder
+        )
+        self.group_dims = group_dims
+        self.all_subgroup_dims = []
+        for group_dim in group_dims:
+            min_group_size = group_dim // self.subgroups_per_group
+            remainder = group_dim % self.subgroups_per_group
+            subgroup_dims = [min_group_size + 1] * remainder + [min_group_size] * (
+                self.subgroups_per_group - remainder
+            )
+            self.all_subgroup_dims.append(subgroup_dims)
 
     def _create_config_space(self):
         configuration_space = ConfigurationSpace()
@@ -626,19 +658,8 @@ class HierarchicalStructures(AbstractFunction):
         instances = {}
         x_i = 0
 
-        dim_without_categorical = self.dim - 2
-
-        # Determine dimensions for groups and subgroups
-        total_subgroups = self.groups * self.subgroups_per_group
-        min_group_size = dim_without_categorical // total_subgroups
-        remainder = dim_without_categorical % total_subgroups
-        subgroup_dims = [min_group_size + 1] * remainder + [min_group_size] * (
-            total_subgroups - remainder
-        )
-
         # Generate seeds for each subgroup
-        subgroup_seeds = self.rng.integers(low=0, high=1000, size=total_subgroups)
-
+        subgroup_seeds = self.rng.integers(low=0, high=1000, size=self.total_subgroups)
         # Create groups and subgroups
         for group_id in range(self.groups):
             group_instances = {}
@@ -647,13 +668,12 @@ class HierarchicalStructures(AbstractFunction):
                 group_instances[subgroup_id] = {
                     "function": SumOfQ(
                         seed=subgroup_seeds[subgroup_index],
-                        dim=subgroup_dims[subgroup_index],
+                        dim=self.all_subgroup_dims[group_id][subgroup_id],
                     ),
                     "starts_at": x_i,
                 }
-                x_i += subgroup_dims[subgroup_index]
+                x_i += self.all_subgroup_dims[group_id][subgroup_id]
             instances[group_id] = group_instances
-
         return instances
 
     def _function(self, x: np.ndarray) -> float:
@@ -667,28 +687,57 @@ class HierarchicalStructures(AbstractFunction):
         Returns:
             float: The function value at `x`.
         """
+        print("x", x)
         group = x[-2]
         subgroup = x[-1]
 
         # Select the correct instance based on group and subgroup
         instance = self.instances[group][subgroup]["function"]
         starts_at = self.instances[group][subgroup]["starts_at"]
+
         x = x[starts_at : starts_at + instance.dim]
+        print("xx", x)
         return instance._function(x)
 
     def _calculate_x_min(self):
         """
-        Find the global minimum across all groups and subgroups.
+        Find the global minimum across all groups and subgroups,
+        and return the corresponding x_min
+        and the group/subgroup that leads to it.
         """
-        current_best_f = math.inf
-        x_min = None
+        # Initialize a list of minimum values for each subgroup
+        x_min_init = [None] * self.dim_without_categorical
 
+        # Initialize the best known function value as infinity
+        current_best_f = math.inf
+        group_of_x_min = None
+        subgroup_of_x_min = None
+
+        # Iterate over all groups and subgroups
         for group_id, group_instances in self.instances.items():
             for subgroup_id, func in group_instances.items():
+                # Check if this subgroup's function has a smaller f_min
                 if func["function"].f_min < current_best_f:
+                    # Update the best function value
                     current_best_f = func["function"].f_min
-                    x_min = [*list(func["function"].x_min), group_id, subgroup_id]
 
+                    # Store the group and subgroup indices
+                    group_of_x_min = group_id
+                    subgroup_of_x_min = subgroup_id
+
+                    # Copy the x_min of the function corresponding to this subgroup
+                    x_min = [float(val) for val in func["function"].x_min]
+
+        # Fill the global x_min array with the values of the current x_min
+        instance = self.instances[group_of_x_min][subgroup_of_x_min]["function"]
+        starts_at = self.instances[group_of_x_min][subgroup_of_x_min]["starts_at"]
+
+        x_min_init[starts_at : starts_at + instance.dim] = x_min
+
+        # Add the group and subgroup identifiers to the end of the x_min array
+        x_min = [*x_min_init, group_of_x_min, subgroup_of_x_min]
+
+        # Store the final x_min
         self._x_min = x_min
 
     @property
@@ -759,6 +808,8 @@ class InvalidParameterization(AbstractFunction):
         self._configspace = self.instance._create_config_space()
 
         self.cube, self.cube_sides = self._make_hypercube(cube_size)
+        self._x_min = None
+        self.x_min_computed = False
 
     def _make_hypercube(self, cube_size):
         """
@@ -815,7 +866,7 @@ class InvalidParameterization(AbstractFunction):
         evaluated at its bounds and at the edges of the hypercube to find the smallest value
         where x is a valid parameterisation.
         """
-        if self._x_min:
+        if self.x_min_computed:
             return self._x_min
 
         x_min = self.instance.x_min
@@ -836,6 +887,7 @@ class InvalidParameterization(AbstractFunction):
             x_min[i] = b[argmin]
 
         self._x_min = x_min
+        self.x_min_computed = True
 
         return self._x_min
 
