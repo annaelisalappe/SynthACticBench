@@ -7,9 +7,9 @@ problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
     _target_: synthacticbench.objective_functions.DeterministicObjective
-    instance_parameter: ${instance_parameter}
     wrapped_bench:
       _target_: synthacticbench.objective_functions.NoisyEvaluation
+      instance_parameter: ${instance_parameter}
       dim: 10
       seed: 52
       distribution: no_noise
