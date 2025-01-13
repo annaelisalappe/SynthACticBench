@@ -441,7 +441,7 @@ class CensoredObjective(AbstractFunction):
         # if the function value is more that cutoff percent worse than the minimum, return
         # infinity instead of the true
         # function value to indicate that the evaluation was not successful
-        if f_eval >= self.f_min * (1 + self.cutoff):
+        if f_eval >= (self.f_min + 1e-8) * (1 + self.cutoff):
             return float("inf")
 
         return f_eval

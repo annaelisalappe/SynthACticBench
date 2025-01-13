@@ -20,7 +20,6 @@ class Griewank(AbstractFunction):
         )
         self.lower_bounds = [-600] * self.dim
         self.upper_bounds = [600] * self.dim
-        self._make_coefficients()
 
     def _create_config_space(self):
         return ConfigurationSpace(
@@ -49,10 +48,6 @@ class Griewank(AbstractFunction):
         """
         return 0.0
 
-    def _make_coefficients(self) -> np.ndarray:
-        generator = np.random.default_rng(seed=self.seed)
-        self.coefficients = generator.uniform(low=0.1, high=30, size=(1, 1))
-
     def _function(self, x: np.ndarray) -> np.ndarray:
         """
         Compute the Griewank function for input x.
@@ -65,7 +60,7 @@ class Griewank(AbstractFunction):
         prod_term = np.prod(
             np.cos(x / np.sqrt(np.arange(1, d + 1))), axis=1
         )  # Product of cos(x_i / sqrt(i))
-        return self.coefficients[0] * (1 + sum_term - prod_term)
+        return 1 + sum_term - prod_term
 
 
 class Rosenbrock(AbstractFunction):
@@ -81,7 +76,6 @@ class Rosenbrock(AbstractFunction):
         )
         self.lower_bounds = [-5] * self.dim
         self.upper_bounds = [10] * self.dim
-        self._make_coefficients()
 
     def _create_config_space(self):
         return ConfigurationSpace(
@@ -104,10 +98,6 @@ class Rosenbrock(AbstractFunction):
     def f_min(self) -> float | None:
         return 0.0
 
-    def _make_coefficients(self) -> np.ndarray:
-        generator = np.random.default_rng(seed=self.seed)
-        self.coefficients = generator.uniform(low=1, high=1, size=(1, 2))[0]
-
     def _function(self, x: np.ndarray) -> np.ndarray:
         x = np.atleast_2d(x) if self.dim > 1 else x
         totals = np.zeros(x.shape[0])
@@ -115,11 +105,11 @@ class Rosenbrock(AbstractFunction):
             totals = (1 - x) ** 2  # Simplified 1D Rosenbrock function
         else:
             for i in range(self.dim - 1):
-                totals += self.coefficients[0] * (
+                totals +=(
                     100 * (x[:, i + 1] - x[:, i] ** 2) ** 2 + (1 - x[:, i]) ** 2
                 )
 
-        return self.coefficients[1] * totals
+        return totals
 
 
 class Ackley(AbstractFunction):
@@ -135,7 +125,6 @@ class Ackley(AbstractFunction):
         )
         self.lower_bounds = [-32.768] * self.dim
         self.upper_bounds = [32.768] * self.dim
-        self._make_coefficients()
 
     def _create_config_space(self):
         return ConfigurationSpace(
@@ -150,10 +139,6 @@ class Ackley(AbstractFunction):
             seed=self.seed,
         )
 
-    def _make_coefficients(self) -> np.ndarray:
-        generator = np.random.default_rng(seed=self.seed)
-
-        self.coefficients = generator.uniform(low=1, high=1, size=(1, 1))
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -173,7 +158,7 @@ class Ackley(AbstractFunction):
         part1 = -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2, axis=1) / self.dim))
         part2 = -np.exp(np.sum(np.cos(2 * np.pi * x), axis=1) / self.dim)
 
-        return self.coefficients[0] * (part1 + part2 + 20 + np.e)
+        return part1 + part2 + 20 + np.e
 
 
 class ZDT1(AbstractFunction):
