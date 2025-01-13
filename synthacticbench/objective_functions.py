@@ -301,7 +301,7 @@ class TimeDependentOP(AbstractFunction):
 
     @property
     def f_min(self) -> float:
-        return self.instance.f_min
+        return self._function(self.x_min)
 
 
 class TimeDependentNOP(AbstractFunction):
@@ -394,8 +394,7 @@ class TimeDependentNOP(AbstractFunction):
 
     @property
     def f_min(self) -> float:
-        # TODO
-        pass
+        return self._function(self.x_min)
 
 
 class CensoredObjective(AbstractFunction):

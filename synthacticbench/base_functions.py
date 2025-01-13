@@ -309,7 +309,7 @@ class ZDT3(AbstractFunction):
             x2 = 1 - np.sqrt(x1) - x1 * np.sin(10 * np.pi * x1)
             pf.append(np.array([x1, x2]).T)
 
-        return np.row_stack(pf)
+        return np.vstack(pf)
 
 
 class SumOfQ(AbstractFunction):

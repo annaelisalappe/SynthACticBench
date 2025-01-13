@@ -130,7 +130,7 @@ class RelevantParameters(AbstractFunction):
         Returns:
             float: The minimum value of the objective function.
         """
-        return self.instance.f_min + ((self.noise_low + self.noise_high) * 0.5)
+        return self.instance.f_min
 
 
 class ParameterInteractions(AbstractFunction):
