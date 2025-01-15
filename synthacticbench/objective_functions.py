@@ -286,10 +286,14 @@ class TimeDependentOP(AbstractFunction):
         return self.instance._function(x=x) + (self.a + self.b * self.timer)
 
     def _function_oscillations(self, x: ndarray) -> float:
-        return self.instance._function(x=x) + self.a * math.sin(self.b + self.timer)
+        return self.instance._function(x=x) + math.sin(self.a + self.b * self.timer)
 
     def _function(self, x: ndarray) -> float:
-        return self.function(x=x)
+        result = self.function(x=x)
+        self.timer += (
+            1  # TODO: This is not ideal; gets evaluated also when we calculate the f_min
+        )
+        return result
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -385,7 +389,11 @@ class TimeDependentNOP(AbstractFunction):
         return np.sum((x - lmd) ** 2)
 
     def _function(self, x: ndarray) -> float:
-        return self.function(x=x)
+        result = self.function(x=x)
+        self.timer += (
+            1  # TODO: This is not ideal; gets evaluated also when we calculate the f_min
+        )
+        return result
 
     @property
     def x_min(self) -> np.ndarray | None:
