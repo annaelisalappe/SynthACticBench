@@ -2,14 +2,14 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: RelevantParameters
+problem_id: InvalidParameterization
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.search_space_functions.RelevantParameters
+    _target_: synthacticbench.search_space_functions.InvalidParameterization
     instance_parameter: ${instance_parameter}
-    dim: 50
-    num_quadratic: 3
+    dim: 10
+    cube_size: 0.2
     seed: 52
 task:
   n_trials: 100
@@ -26,7 +26,7 @@ task:
   domain: synthetic
   objective_function_approximation: real
   has_virtual_time: false
-  deterministic: false
+  deterministic: true
   dimensions: 10
   search_space_n_categoricals: 0
   search_space_n_ordinals: 0

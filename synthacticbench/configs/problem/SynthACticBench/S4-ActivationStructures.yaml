@@ -9,8 +9,8 @@ problem:
     _target_: synthacticbench.search_space_functions.ActivationStructures
     instance_parameter: ${instance_parameter}
     dim: 10
-    groups: 3
-    seed: 52
+    groups: 2
+    seed: 53
 task:
   n_trials: 100
   time_budget: null

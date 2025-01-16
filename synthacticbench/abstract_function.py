@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from carps.benchmarks.problem import Problem
 from carps.loggers.abstract_logger import AbstractLogger
-from carps.utils.trials import TrialInfo, TrialValue, StatusType
+from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
 
 
