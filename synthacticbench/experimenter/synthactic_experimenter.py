@@ -18,35 +18,35 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     scenario = config["scenario"]
     seed: int = int(config["seed"])
 
-    if scenario == "c1":
+    if scenario == "s1":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S1-RelevantParameters.yaml"
         )
-    elif scenario == "c2-ackley":
+    elif scenario == "s2-ackley":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-ackley.yaml"
         )
-    elif scenario == "c2-rosenbrock":
+    elif scenario == "s2-rosenbrock":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-rosenbrock.yaml"
         )
-    elif scenario == "c3":
+    elif scenario == "s3":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S3-MixedTypes.yaml"
         )
-    elif scenario == "c4":
+    elif scenario == "s4":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S4-ActivationStructures.yaml"
         )
-    elif scenario == "c5":
+    elif scenario == "s5":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S5-ShiftingDomains.yaml"
         )
-    elif scenario == "c6":
+    elif scenario == "S6":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S6-HierarchicalStructures.yaml"
         )
-    elif scenario == "c7":
+    elif scenario == "s7":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S7-InvalidParameterization.yaml"
         )
