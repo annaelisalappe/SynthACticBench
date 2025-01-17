@@ -42,7 +42,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S5-ShiftingDomains.yaml"
         )
-    elif scenario == "S6":
+    elif scenario == "s6":
         problem_task_cfg = OmegaConf.load(
             "synthacticbench/configs/problem/SynthACticBench/S6-HierarchicalStructures.yaml"
         )
