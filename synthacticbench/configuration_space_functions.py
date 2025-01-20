@@ -72,7 +72,7 @@ class RelevantParameters(AbstractFunction):
 
         self._configspace = self._create_config_space()
 
-        self.benchmark_name = "s1"
+        self.benchmark_name = "c1"
 
     def _create_config_space(self):
         quadr_space = self.instance._create_config_space()
@@ -164,7 +164,7 @@ class ParameterInteractions(AbstractFunction):
         super().__init__(
             seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
         )
-        self.benchmark_name = "s2"
+        self.benchmark_name = "c2"
         self.name = name
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
@@ -245,7 +245,7 @@ class MixedTypes(AbstractFunction):
 
         self.rng = np.random.default_rng(seed=seed)
 
-        self.benchmark_name = "s3"
+        self.benchmark_name = "c3"
         self._configspace = self._create_config_space()
 
     def _create_config_space(self):
@@ -359,7 +359,7 @@ class ActivationStructures(AbstractFunction):
         self.instances = self._make_groups()
 
         self._configspace = self._create_config_space()
-        self.benchmark_name = "s4"
+        self.benchmark_name = "c4"
 
     def _create_config_space(self):
         configuration_space = ConfigurationSpace()
@@ -466,7 +466,7 @@ class ShiftingDomains(AbstractFunction):
         super().__init__(
             seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
         )
-        self.benchmark_name = "s5"
+        self.benchmark_name = "c5"
         self.rng = np.random.default_rng(seed=seed)
 
         assert self.dim > 1, "Dimension has to be larger than one in this problem"
@@ -607,7 +607,7 @@ class HierarchicalStructures(AbstractFunction):
         self.instances = self._make_hierarchical_groups()
 
         self._configspace = self._create_config_space()
-        self.benchmark_name = "s6"
+        self.benchmark_name = "c6"
 
     def _init_dims(self):
         self.total_subgroups = self.groups * self.subgroups_per_group
@@ -696,7 +696,6 @@ class HierarchicalStructures(AbstractFunction):
         starts_at = self.instances[group][subgroup]["starts_at"]
 
         x = x[starts_at : starts_at + instance.dim]
-        print("xx", x)
         return instance._function(x)
 
     def _calculate_x_min(self):
@@ -799,7 +798,7 @@ class InvalidParameterization(AbstractFunction):
         super().__init__(
             seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
         )
-        self.benchmark_name = "s7"
+        self.benchmark_name = "c7"
 
         self.rng = np.random.default_rng(seed=seed)
 
@@ -933,7 +932,7 @@ class MixedDomains(AbstractFunction):
 
         self._configspace = self._create_config_space()
 
-        self.benchmark_name = "s8"
+        self.benchmark_name = "c8"
 
     def _create_config_space(self):
         return ConfigurationSpace(

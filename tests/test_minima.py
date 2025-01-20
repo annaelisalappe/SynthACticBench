@@ -20,7 +20,7 @@ from synthacticbench.objective_functions import (
     SinglePeak,
     TimeDependentOP,
 )
-from synthacticbench.search_space_functions import (
+from synthacticbench.configuration_space_functions import (
     ActivationStructures,
     HierarchicalStructures,
     InvalidParameterization,
@@ -32,15 +32,15 @@ from synthacticbench.search_space_functions import (
 )
 
 CONFIG_PATHS = [
-    "synthacticbench/configs/problem/SynthACticBench/S1-RelevantParameters.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-rosenbrock.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-ackley.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S3-MixedTypes.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S4-ActivationStructures.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S5-ShiftingDomains.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S6-HierarchicalStructures.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S7-InvalidParameterization.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S8-MixedDomains.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-rosenbrock.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-ackley.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C8-MixedDomains.yaml",
     "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjective.yaml",
     "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
     "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
@@ -78,7 +78,7 @@ def test_search_space(generated_instances):
             # Manually set noisy parameters to zero since x_min includes None
             x_min = func.x_min
             y = func._function(x_min)
-            noise = 100
+            noise = 100 * func.num_noisy
             assert np.abs(y - func.f_min) <= noise, (
                 f"Failed for {type(funcclass_instance).__name__}: "
                 f"f_min={func.f_min}, y={y}, "

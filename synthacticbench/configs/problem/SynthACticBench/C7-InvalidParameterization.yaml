@@ -2,17 +2,14 @@
 instance_parameter: 0.0
 
 benchmark_id: SynthACticBench
-problem_id: ParameterInteractions-rosenbrock
+problem_id: InvalidParameterization
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
-    _target_: synthacticbench.search_space_functions.MixedTypes
+    _target_: synthacticbench.configuration_space_functions.InvalidParameterization
     instance_parameter: ${instance_parameter}
-    dim: 20
-    share_cat: 0.25
-    share_bool: 0.25
-    share_int: 0.25
-    share_float: 0.25
+    dim: 10
+    cube_size: 0.2
     seed: 52
 task:
   n_trials: 100
@@ -31,10 +28,10 @@ task:
   has_virtual_time: false
   deterministic: true
   dimensions: 10
-  search_space_n_categoricals: 10
+  search_space_n_categoricals: 0
   search_space_n_ordinals: 0
-  search_space_n_integers: 5
-  search_space_n_floats: 5
+  search_space_n_integers: 0
+  search_space_n_floats: 10
   search_space_has_conditionals: false
   search_space_has_forbiddens: false
   search_space_has_priors: false

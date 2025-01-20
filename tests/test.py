@@ -14,15 +14,15 @@ from omegaconf import OmegaConf
 from synthacticbench.generate_instances import generate_instances
 
 CONFIG_PATHS = [
-    "synthacticbench/configs/problem/SynthACticBench/S1-RelevantParameters.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-rosenbrock.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S2-ParameterInteractions-ackley.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S3-MixedTypes.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S4-ActivationStructures.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S5-ShiftingDomains.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S6-HierarchicalStructures.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S7-InvalidParameterization.yaml",
-    "synthacticbench/configs/problem/SynthACticBench/S8-MixedDomains.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-rosenbrock.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-ackley.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
+    "synthacticbench/configs/problem/SynthACticBench/C8-MixedDomains.yaml",
     #
     "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjective.yaml",
     "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
