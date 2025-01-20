@@ -129,7 +129,7 @@ class Ackley(AbstractFunction):
             {
                 f"x_{i}": Float(
                     bounds=(self.lower_bounds[i], self.upper_bounds[i]),
-                    default=0,
+                    default=1,
                     name=f"x_{i}",
                 )
                 for i in range(self.dim)
