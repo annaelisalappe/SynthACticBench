@@ -30,7 +30,7 @@ class AbstractFunction(Problem):
         try:
             cost = self._function(x=x)
             status = StatusType.SUCCESS
-        except Exception:
+        except (ValueError, TypeError):  # Replace with relevant exceptions
             cost = np.inf
             status = StatusType.CRASHED
         inst_cost = cost + self.instance_parameter

@@ -12,78 +12,38 @@ from rich import inspect
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
+scenario_paths = {
+    "c1": "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml",
+    "c2-ackley": "synthacticbench/configs/problem/SynthACticBench/"
+    "C2-ParameterInteractions-ackley.yaml",
+    "c2-rosenbrock": "synthacticbench/configs/problem/SynthACticBench/"
+    "C2-ParameterInteractions-rosenbrock.yaml",
+    "c3": "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml",
+    "c4": "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml",
+    "c5": "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml",
+    "c6": "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
+    "c7": "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
+    "o1": "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjective.yaml",
+    "o2": "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
+    "o3": "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
+    "o4-OP": "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml",
+    "o4-NOP": "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml",
+    "o5": "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml",
+    "o6": "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml",
+    "o7": "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml",
+}
+
 
 def run_config(config: dict, result_processor: ResultProcessor, custom_config: dict):
     algorithm_configurator_name = config["algorithm_configurator"]
     scenario = config["scenario"]
     seed: int = int(config["seed"])
 
-    if scenario == "c1":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml"
-        )
-    elif scenario == "c2-ackley":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-ackley.yaml"
-        )
-    elif scenario == "c2-rosenbrock":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C2-ParameterInteractions-rosenbrock.yaml"
-        )
-    elif scenario == "c3":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml"
-        )
-    elif scenario == "c4":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml"
-        )
-    elif scenario == "c5":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml"
-        )
-    elif scenario == "c6":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml"
-        )
-    elif scenario == "c7":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml"
-        )
-    elif scenario == "o1":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjective.yaml"
-        )
-    elif scenario == "o2":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml"
-        )
-    elif scenario == "o3":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml"
-        )
-    elif scenario == "o4-OP":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml"
-        )
-    elif scenario == "o4-NOP":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml"
-        )
-    elif scenario == "o5":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml"
-        )
-    elif scenario == "o6":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml"
-        )
-    elif scenario == "o7":
-        problem_task_cfg = OmegaConf.load(
-            "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml"
-        )
-    else:
-        raise Exception("SynthACticBench scenario unknown")
+    try:
+        problem_task_cfg = OmegaConf.load(scenario_paths[scenario])
+    except KeyError as err:
+        raise Exception(f"Unknown SynthACticBench scenario: {scenario}") from err
+
     synthactic_problem = make_problem(problem_task_cfg)
     inspect(synthactic_problem)
 

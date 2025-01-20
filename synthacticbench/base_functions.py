@@ -105,9 +105,7 @@ class Rosenbrock(AbstractFunction):
             totals = (1 - x) ** 2  # Simplified 1D Rosenbrock function
         else:
             for i in range(self.dim - 1):
-                totals +=(
-                    100 * (x[:, i + 1] - x[:, i] ** 2) ** 2 + (1 - x[:, i]) ** 2
-                )
+                totals += 100 * (x[:, i + 1] - x[:, i] ** 2) ** 2 + (1 - x[:, i]) ** 2
 
         return totals
 
@@ -138,7 +136,6 @@ class Ackley(AbstractFunction):
             },
             seed=self.seed,
         )
-
 
     @property
     def x_min(self) -> np.ndarray | None:

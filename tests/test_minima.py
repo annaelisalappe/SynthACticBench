@@ -10,16 +10,6 @@ import numpy as np
 import pytest
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
-from synthacticbench.generate_instances import generate_instances
-from synthacticbench.objective_functions import (
-    CensoredObjective,
-    DeterministicObjective,
-    Multimodal,
-    MultipleObjectives,
-    NoisyEvaluation,
-    SinglePeak,
-    TimeDependentOP,
-)
 from synthacticbench.configuration_space_functions import (
     ActivationStructures,
     HierarchicalStructures,
@@ -29,6 +19,16 @@ from synthacticbench.configuration_space_functions import (
     ParameterInteractions,
     RelevantParameters,
     ShiftingDomains,
+)
+from synthacticbench.generate_instances import generate_instances
+from synthacticbench.objective_functions import (
+    CensoredObjective,
+    DeterministicObjective,
+    Multimodal,
+    MultipleObjectives,
+    NoisyEvaluation,
+    SinglePeak,
+    TimeDependentOP,
 )
 
 CONFIG_PATHS = [
@@ -61,7 +61,7 @@ def generated_instances(tmp_path_factory, request):
     return list(output_dir.glob("*.yaml"))
 
 
-def test_search_space(generated_instances):
+def test_configuration_space(generated_instances):
     for path in generated_instances:
         cfg = OmegaConf.load(path)
         problem = instantiate(cfg.problem)
@@ -267,9 +267,7 @@ def test_obj_func(generated_instances):
             wrapped_bench = MixedDomains(
                 dim=funcclass_instance.dim, seed=funcclass_instance.seed
             )  # Example, adjust as needed
-            func = CensoredObjective(
-                cutoff=-1e+8, wrapped_bench=wrapped_bench
-            )
+            func = CensoredObjective(cutoff=-1e8, wrapped_bench=wrapped_bench)
 
             # Test the behavior when the function value is below the cutoff
             x_min = func.x_min
