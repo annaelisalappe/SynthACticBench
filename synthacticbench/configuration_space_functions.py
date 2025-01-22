@@ -839,7 +839,7 @@ class InvalidParameterization(AbstractFunction):
 
         err_message = "Received invalid parameter value for "
         for i in invalid:
-            err_message += f"x_{i}: {x[i]}, "3
+            err_message += f"x_{i}: {x[i]}, "
 
         raise Exception(err_message[:-1])
 
