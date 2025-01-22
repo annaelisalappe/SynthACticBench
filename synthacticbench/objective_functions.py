@@ -19,6 +19,9 @@ from synthacticbench.base_functions import (
 )
 
 
+class RightCensoredException(Exception):
+    pass
+
 class DeterministicObjective(AbstractFunction):
     """
     Deterministic Objective - o1
@@ -476,7 +479,7 @@ class CensoredObjective(AbstractFunction):
         # infinity instead of the true
         # function value to indicate that the evaluation was not successful
         if f_eval >= (self.f_min + 1e-8) * (1 + self.cutoff):
-            return float("inf")
+            raise RightCensoredException("Function value exceeds the censoring limit.")
 
         return f_eval
 

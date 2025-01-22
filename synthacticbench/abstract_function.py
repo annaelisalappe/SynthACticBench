@@ -8,6 +8,8 @@ from carps.loggers.abstract_logger import AbstractLogger
 from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
 
+from synthacticbench.objective_functions import RightCensoredException
+
 
 class AbstractFunction(Problem):
     def __init__(
@@ -44,6 +46,9 @@ class AbstractFunction(Problem):
         except (ValueError, TypeError):  # Replace with relevant exceptions
             cost = np.inf
             status = StatusType.CRASHED
+        except RightCensoredException:
+            cost = np.inf
+            status = StatusType.TIMEOUT
         instance = trial_info.instance
         inst_cost = cost + self._instance_offset(instance)
 
