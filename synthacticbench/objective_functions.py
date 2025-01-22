@@ -9,7 +9,7 @@ from ConfigSpace import (
 )
 from numpy import ndarray
 
-from synthacticbench.abstract_function import AbstractFunction
+from synthacticbench.abstract_function import AbstractFunction, RightCensoredException
 from synthacticbench.base_functions import (
     ZDT1,
     ZDT3,
@@ -17,10 +17,6 @@ from synthacticbench.base_functions import (
     Griewank,
     SumOfQ,
 )
-
-
-class RightCensoredException(Exception):
-    pass
 
 class DeterministicObjective(AbstractFunction):
     """

@@ -8,8 +8,9 @@ from carps.loggers.abstract_logger import AbstractLogger
 from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
 
-from synthacticbench.objective_functions import RightCensoredException
 
+class RightCensoredException(Exception):
+    pass
 
 class AbstractFunction(Problem):
     def __init__(
@@ -31,6 +32,8 @@ class AbstractFunction(Problem):
         self._instances = instances
 
     def _instance_offset(self, instance: str) -> float:
+        if instance is None:
+            return self._instances[self._instances.keys()[0]]
         return self._instances[instance]
 
     @property
