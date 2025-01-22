@@ -595,7 +595,7 @@ class HierarchicalStructures(AbstractFunction):
         assert groups * subgroups_per_group <= dim - 2, (
             "The total number of subgroups "
             f"(groups * subgroups_per_group = {groups * subgroups_per_group}) "
-            f"must not exceed the total number of non-categorical parameters ({dim - 2}). "
+            f"must not exceed the total number of non-categorical parameters ({dim-2}). "
         )
         self._x_min = None
         self.groups = groups
@@ -877,12 +877,12 @@ class InvalidParameterization(AbstractFunction):
                 self.cube[i] + self.cube_sides[i],
                 self.instance.upper_bounds[i],
             ]
-            argmin = np.argmin(
+            argmin = np.argmin([
                 self.instance.get_value_in_single_dim(x=b[0], i=i),
                 self.instance.get_value_in_single_dim(x=b[1], i=i),
                 self.instance.get_value_in_single_dim(x=b[2], i=i),
                 self.instance.get_value_in_single_dim(x=b[3], i=i),
-            )
+            ])
             x_min[i] = b[argmin]
 
         self._x_min = x_min
