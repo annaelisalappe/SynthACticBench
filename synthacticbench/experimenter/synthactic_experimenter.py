@@ -85,6 +85,7 @@ class PyExperimenterLogger(AbstractLogger):
         pass
 
 def run_config(config: dict, result_processor: ResultProcessor, custom_config: dict):
+    print("PyExperimenter fetched this experiment config", config)
     algorithm_configurator_name = config["algorithm_configurator"]
     scenario = config["scenario"]
     seed: int = int(config["seed"])
@@ -124,12 +125,16 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
             algorithm_configurator_cfg = OmegaConf.load("config/randomsearch.yml")
         elif algorithm_configurator_name == "irace":
             algorithm_configurator_cfg = OmegaConf.load("config/irace.yml")
+            algorithm_configurator_cfg.instances = instances
 
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
     algorithm_configurator_cfg.task.n_trials = n_trials
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
+
+    if algorithm_configurator_name == "irace":
+        algorithm_configurator.set_instances(instances)
 
     # obtain incumbent through running the optimizer
     # ToDo: How to access the optimization trace?
@@ -141,8 +146,13 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     cost_hat = synthactic_problem.function._function(x_hat)
     trial_value: TrialValue = inc_tuple[1]
 
+    config_dict = dict(trial_info.config)
+    for key in config_dict.keys():
+        if isinstance(config_dict[key], np.int64):
+            config_dict[key] = int(config_dict[key])
+
     res = {
-        "incumbent": str(trial_info.config),
+        "incumbent": json.dumps(config_dict),
         "incumbent_cost": str(cost_hat),
         "incumbent_found_at": str(trial_value.virtual_time),
         "done": "true",

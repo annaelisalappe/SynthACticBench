@@ -23,14 +23,14 @@ class Instance:
 
 class IRaceOptimizer(Optimizer):
 
-    def __init__(self, problem: Problem, task: Task, loggers=None):
+    def __init__(self, problem: Problem, task: Task, instances: list[str] | None = None, loggers=None):
         super().__init__(problem, task, loggers)
         # ToDo: Any additional instantiations
         self.target_runner = IRaceTargetRunner(self)
         self.parameter_space = None
         self.scenario = None
         self.seed = None
-        self._instances = None
+        self._instances = instances
 
         self.convert_configspace(problem.configspace)
 
@@ -83,7 +83,6 @@ class IRaceTargetRunner:
         self.incumbent_trial_value = None
 
     def target_run(self, experiment: Experiment, scenario: Scenario) -> float:
-        print(experiment.instance, experiment.configuration_id)
         # convert given experiment to trial info
         trial_info = self.optimizer.convert_to_trial(experiment, scenario)
         # evaluate experiment and obtain trial value
