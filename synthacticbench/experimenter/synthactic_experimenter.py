@@ -17,25 +17,24 @@ import numpy as np
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
+base_path = "synthacticbench/configs/problem/SynthACticBench/"
 scenario_paths = {
-    "c1": "synthacticbench/configs/problem/SynthACticBench/C1-RelevantParameters.yaml",
-    "c2-ackley": "synthacticbench/configs/problem/SynthACticBench/"
-    "C2-ParameterInteractions-ackley.yaml",
-    "c2-rosenbrock": "synthacticbench/configs/problem/SynthACticBench/"
-    "C2-ParameterInteractions-rosenbrock.yaml",
-    "c3": "synthacticbench/configs/problem/SynthACticBench/C3-MixedTypes.yaml",
-    "c4": "synthacticbench/configs/problem/SynthACticBench/C4-ActivationStructures.yaml",
-    "c5": "synthacticbench/configs/problem/SynthACticBench/C5-ShiftingDomains.yaml",
-    "c6": "synthacticbench/configs/problem/SynthACticBench/C6-HierarchicalStructures.yaml",
-    "c7": "synthacticbench/configs/problem/SynthACticBench/C7-InvalidParameterization.yaml",
-    "o1": "synthacticbench/configs/problem/SynthACticBench/O1-DeterministicObjective.yaml",
-    "o2": "synthacticbench/configs/problem/SynthACticBench/O2-NoisyEvaluation.yaml",
-    "o3": "synthacticbench/configs/problem/SynthACticBench/O3-MultipleObjectives.yaml",
-    "o4-OP": "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentOP.yaml",
-    "o4-NOP": "synthacticbench/configs/problem/SynthACticBench/O4-TimeDependentNOP.yaml",
-    "o5": "synthacticbench/configs/problem/SynthACticBench/O5-CensoredObjective.yaml",
-    "o6": "synthacticbench/configs/problem/SynthACticBench/O6-Multimodal.yaml",
-    "o7": "synthacticbench/configs/problem/SynthACticBench/O7-SinglePeak.yaml",
+    "c1": base_path + "C1-RelevantParameters.yaml",
+    "c2-ackley": base_path + "C2-ParameterInteractions-ackley.yaml",
+    "c2-rosenbrock": base_path + "C2-ParameterInteractions-rosenbrock.yaml",
+    "c3": base_path + "C3-MixedTypes.yaml",
+    "c4": base_path + "C4-ActivationStructures.yaml",
+    "c5": base_path + "C5-ShiftingDomains.yaml",
+    "c6": base_path + "C6-HierarchicalStructures.yaml",
+    "c7": base_path + "C7-InvalidParameterization.yaml",
+    "o1": base_path + "O1-DeterministicObjective.yaml",
+    "o2": base_path + "O2-NoisyEvaluation.yaml",
+    "o3": base_path + "O3-MultipleObjectives.yaml",
+    "o4-OP": base_path + "O4-TimeDependentOP.yaml",
+    "o4-NOP": base_path + "O4-TimeDependentNOP.yaml",
+    "o5": base_path + "O5-CensoredObjective.yaml",
+    "o6": base_path + "O6-Multimodal.yaml",
+    "o7": base_path + "O7-SinglePeak.yaml",
 }
 
 

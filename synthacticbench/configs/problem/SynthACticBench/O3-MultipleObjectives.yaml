@@ -1,3 +1,4 @@
+# @package _global_
 benchmark_id: SynthACticBench
 problem_id: NoisyEvaluation
 problem:
@@ -10,7 +11,7 @@ task:
   n_trials: 100
   time_budget: null
   n_workers: 1
-  n_objectives: 1
+  n_objectives: 2
   objectives:
     - quality
   is_multifidelity: false
