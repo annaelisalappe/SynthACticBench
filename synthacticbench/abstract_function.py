@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 from carps.benchmarks.problem import Problem
 from carps.loggers.abstract_logger import AbstractLogger
@@ -11,18 +13,27 @@ class AbstractFunction(Problem):
     def __init__(
         self,
         seed: int,
-        instance_parameter: float,
         dim: int | None = None,
         loggers: list[AbstractLogger] | None = None,
     ) -> None:
         super().__init__(loggers=loggers)
-        self.instance_parameter = instance_parameter
         self.seed = seed
         self.dim = dim
+        self._instances = None
 
     @property
     def configspace(self) -> ConfigurationSpace:
         return self._configspace
+
+    def set_instances(self, instances):
+        self._instances = instances
+
+    def _instance_offset(self, instance: str) -> float:
+        return self._instances[instance]
+
+    @property
+    def instances(self) -> list[Any]:
+        return self._instances
 
     def _evaluate(self, trial_info: TrialInfo) -> TrialValue:
         config = trial_info.config
@@ -33,7 +44,9 @@ class AbstractFunction(Problem):
         except (ValueError, TypeError):  # Replace with relevant exceptions
             cost = np.inf
             status = StatusType.CRASHED
-        inst_cost = cost + self.instance_parameter
+        instance = trial_info.instance
+        inst_cost = cost + self._instance_offset(instance)
+
         return TrialValue(cost=inst_cost, status=status)
 
     def _function(self, x: np.ndarray) -> np.ndarray:

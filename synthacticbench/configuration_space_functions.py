@@ -39,7 +39,6 @@ class RelevantParameters(AbstractFunction):
         noise_low: float = -100,
         noise_high=100,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -58,7 +57,7 @@ class RelevantParameters(AbstractFunction):
                 Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.noise_low = noise_low
         self.noise_high = noise_high
@@ -147,7 +146,6 @@ class ParameterInteractions(AbstractFunction):
         dim: int,
         name: str = "ackley",
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -162,7 +160,7 @@ class ParameterInteractions(AbstractFunction):
                 Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.benchmark_name = "c2"
         self.name = name
@@ -206,7 +204,6 @@ class MixedTypes(AbstractFunction):
         share_int: float,
         share_float: float,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -228,7 +225,7 @@ class MixedTypes(AbstractFunction):
             dimension dim.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
 
         # normalize shares
@@ -323,7 +320,6 @@ class ActivationStructures(AbstractFunction):
         dim: int,
         groups: int = 1,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -338,7 +334,7 @@ class ActivationStructures(AbstractFunction):
                 Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
 
         self._x_min = None
@@ -356,7 +352,7 @@ class ActivationStructures(AbstractFunction):
         )
         self.group_dims = group_dims
 
-        self.instances = self._make_groups()
+        self.group_instances = self._make_groups()
 
         self._configspace = self._create_config_space()
         self.benchmark_name = "c4"
@@ -364,7 +360,7 @@ class ActivationStructures(AbstractFunction):
     def _create_config_space(self):
         configuration_space = ConfigurationSpace()
 
-        for cat, instance in self.instances.items():
+        for cat, instance in self.group_instances.items():
             function = instance["function"]
 
             configuration_space.add_configuration_space(
@@ -394,8 +390,8 @@ class ActivationStructures(AbstractFunction):
 
     def _function(self, x: np.ndarray) -> float:
         cat = x[-1]
-        instance = self.instances[cat]["function"]
-        starts_at = self.instances[cat]["starts_at"]
+        instance = self.group_instances[cat]["function"]
+        starts_at = self.group_instances[cat]["starts_at"]
         x = x[starts_at : starts_at + instance.dim]
         return instance._function(x)
 
@@ -406,7 +402,7 @@ class ActivationStructures(AbstractFunction):
         current_best_f = math.inf
 
         cat_of_x_min = None
-        for cat, func in self.instances.items():
+        for cat, func in self.group_instances.items():
             if func["function"].f_min < current_best_f:
                 cat_of_x_min = cat
                 x_min = [
@@ -414,8 +410,8 @@ class ActivationStructures(AbstractFunction):
                     for val in func["function"].x_min
                 ]
 
-        instance = self.instances[cat_of_x_min]["function"]
-        starts_at = self.instances[cat_of_x_min]["starts_at"]
+        instance = self.group_instances[cat_of_x_min]["function"]
+        starts_at = self.group_instances[cat_of_x_min]["starts_at"]
         x_min_init[starts_at : starts_at + instance.dim] = x_min
         x_min = [*x_min_init, cat_of_x_min]
         self._x_min = x_min
@@ -451,7 +447,6 @@ class ShiftingDomains(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -464,7 +459,7 @@ class ShiftingDomains(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.benchmark_name = "c5"
         self.rng = np.random.default_rng(seed=seed)
@@ -576,7 +571,6 @@ class HierarchicalStructures(AbstractFunction):
         groups: int,
         subgroups_per_group: int,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -590,7 +584,7 @@ class HierarchicalStructures(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         assert groups * subgroups_per_group <= dim - 2, (
             "The total number of subgroups "
@@ -604,7 +598,7 @@ class HierarchicalStructures(AbstractFunction):
         # Determine dimensions for groups and subgroups
         self._init_dims()
 
-        self.instances = self._make_hierarchical_groups()
+        self.group_instances = self._make_hierarchical_groups()
 
         self._configspace = self._create_config_space()
         self.benchmark_name = "c6"
@@ -630,7 +624,7 @@ class HierarchicalStructures(AbstractFunction):
     def _create_config_space(self):
         configuration_space = ConfigurationSpace()
 
-        for group_id, group_instances in self.instances.items():
+        for group_id, group_instances in self.group_instances.items():
             for subgroup_id, instance in group_instances.items():
                 function = instance["function"]
 
@@ -692,8 +686,8 @@ class HierarchicalStructures(AbstractFunction):
         subgroup = x[-1]
 
         # Select the correct instance based on group and subgroup
-        instance = self.instances[group][subgroup]["function"]
-        starts_at = self.instances[group][subgroup]["starts_at"]
+        instance = self.group_instances[group][subgroup]["function"]
+        starts_at = self.group_instances[group][subgroup]["starts_at"]
 
         x = x[starts_at : starts_at + instance.dim]
         return instance._function(x)
@@ -713,7 +707,7 @@ class HierarchicalStructures(AbstractFunction):
         subgroup_of_x_min = None
 
         # Iterate over all groups and subgroups
-        for group_id, group_instances in self.instances.items():
+        for group_id, group_instances in self.group_instances.items():
             for subgroup_id, func in group_instances.items():
                 # Check if this subgroup's function has a smaller f_min
                 if func["function"].f_min < current_best_f:
@@ -728,8 +722,8 @@ class HierarchicalStructures(AbstractFunction):
                     x_min = [float(val) for val in func["function"].x_min]
 
         # Fill the global x_min array with the values of the current x_min
-        instance = self.instances[group_of_x_min][subgroup_of_x_min]["function"]
-        starts_at = self.instances[group_of_x_min][subgroup_of_x_min]["starts_at"]
+        instance = self.group_instances[group_of_x_min][subgroup_of_x_min]["function"]
+        starts_at = self.group_instances[group_of_x_min][subgroup_of_x_min]["starts_at"]
 
         x_min_init[starts_at : starts_at + instance.dim] = x_min
 
@@ -765,7 +759,7 @@ class HierarchicalStructures(AbstractFunction):
 
 class InvalidParameterization(AbstractFunction):
     """
-    Invalid Parameterization - C7
+    Invalid Parameterization - S7
     This benchmark simulates a scenario where certain regions of the parameter search space
     are invalid, and attempts to evaluate the objective function in those regions will raise
     an exception.
@@ -782,7 +776,6 @@ class InvalidParameterization(AbstractFunction):
         dim: int,
         cube_size: float,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -796,7 +789,7 @@ class InvalidParameterization(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.benchmark_name = "c7"
 
@@ -907,7 +900,6 @@ class MixedDomains(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -919,7 +911,7 @@ class MixedDomains(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
 
         self.rng = np.random.default_rng(seed=seed)

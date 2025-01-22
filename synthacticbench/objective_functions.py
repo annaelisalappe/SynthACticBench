@@ -34,7 +34,6 @@ class DeterministicObjective(AbstractFunction):
         super().__init__(
             seed=wrapped_bench.seed,
             dim=wrapped_bench.dim,
-            instance_parameter=wrapped_bench.instance_parameter,
             loggers=wrapped_bench.loggers,
         )
         self.benchmark_name = "o1"
@@ -74,7 +73,6 @@ class NoisyEvaluation(AbstractFunction):
         dim: int,
         distribution: str = "uniform",
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
         **kwargs,
     ) -> None:
@@ -89,7 +87,7 @@ class NoisyEvaluation(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
@@ -168,7 +166,6 @@ class MultipleObjectives(AbstractFunction):
         dim: int,
         name: str = "zdt1",
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -180,7 +177,7 @@ class MultipleObjectives(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.name = name
         self.rng = np.random.default_rng(seed=seed)
@@ -241,7 +238,6 @@ class TimeDependentOP(AbstractFunction):
         a: float = 1.0,
         b: float = 0.005,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -259,7 +255,7 @@ class TimeDependentOP(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.benchmark_name = "o4.1"
         self.name = name
@@ -327,7 +323,6 @@ class TimeDependentNOP(AbstractFunction):
         a: float = 1.0,
         b: float = 0.005,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -345,7 +340,7 @@ class TimeDependentNOP(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.benchmark_name = "o4.2"
         self.name = name
@@ -433,7 +428,6 @@ class CensoredObjective(AbstractFunction):
         super().__init__(
             seed=wrapped_bench.seed,
             dim=wrapped_bench.dim,
-            instance_parameter=wrapped_bench.instance_parameter,
             loggers=wrapped_bench.loggers,
         )
         self.benchmark_name = "o5"
@@ -477,7 +471,6 @@ class Multimodal(AbstractFunction):
         dim: int,
         seed: int | None = None,
         name: str | None = "ackley",
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -489,7 +482,7 @@ class Multimodal(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.dim = dim
         self.rng = np.random.default_rng(seed=seed)
@@ -530,7 +523,6 @@ class SinglePeak(AbstractFunction):
         dim: int,
         peak_width: float = 0.01,
         seed: int | None = None,
-        instance_parameter: float = 0.0,
         loggers: list | None = None,
     ) -> None:
         """
@@ -544,7 +536,7 @@ class SinglePeak(AbstractFunction):
             loggers (list | None, optional): List of logger objects. Default is None.
         """
         super().__init__(
-            seed=seed, dim=dim, instance_parameter=instance_parameter, loggers=loggers
+            seed=seed, dim=dim, loggers=loggers
         )
         self.rng = np.random.default_rng(seed=seed)
         self.lower_bound = -100

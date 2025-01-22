@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import json
 
+from carps.loggers.abstract_logger import AbstractLogger
 from carps.utils.running import make_optimizer, make_problem
 from carps.utils.trials import TrialInfo, TrialValue
+from carps.utils.types import Incumbent
 from omegaconf import OmegaConf
 from py_experimenter.experimenter import PyExperimenter
 from py_experimenter.result_processor import ResultProcessor
 from rich import inspect
+import numpy as np
+
 
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
@@ -34,10 +39,57 @@ scenario_paths = {
 }
 
 
+class PyExperimenterLogger(AbstractLogger):
+
+    def __init__(self, result_processor: ResultProcessor):
+        super().__init__()
+        self.result_processor: ResultProcessor = result_processor
+        self.trial_buffer = []
+
+    def log_trial(self, n_trials: float, trial_info: TrialInfo, trial_value: TrialValue,
+                  n_function_calls: int | None = None) -> None:
+        try:
+            config_dict = dict(trial_info.config)
+            for key in config_dict.keys():
+                if isinstance(config_dict[key], np.int64):
+                    config_dict[key] = int(config_dict[key])
+
+            self.result_processor.process_logs({
+                "trial_log": {
+                    "n_trials": str(n_trials),
+                    "trial_config": json.dumps(config_dict),
+                    "instance": trial_info.instance,
+                    "trial_cost": str(trial_value.cost),
+                    "n_function_calls": str(n_function_calls)
+                }
+            })
+        except Exception as e:
+            print(e)
+            print(trial_info)
+            print(trial_info.config)
+            exit()
+
+    def log_incumbent(self, n_trials: int, incumbent: Incumbent) -> None:
+        config_dict = dict(incumbent[0].config)
+        for key in config_dict.keys():
+            if isinstance(config_dict[key], np.int64):
+                config_dict[key] = int(config_dict[key])
+        self.result_processor.process_logs({
+            "incumbent_log": {
+                "n_trials": str(n_trials),
+                "incumbent": json.dumps(config_dict),
+                "incumbent_cost": str(incumbent[1].cost)
+            }
+        })
+    def log_arbitrary(self, data: dict, entity: str) -> None:
+        pass
+
 def run_config(config: dict, result_processor: ResultProcessor, custom_config: dict):
     algorithm_configurator_name = config["algorithm_configurator"]
     scenario = config["scenario"]
     seed: int = int(config["seed"])
+    n_trials: int = int(config["n_trials"])
+    num_instances: int = int(config["num_instances"])
 
     try:
         problem_task_cfg = OmegaConf.load(scenario_paths[scenario])
@@ -45,21 +97,39 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
         raise Exception(f"Unknown SynthACticBench scenario: {scenario}") from err
 
     synthactic_problem = make_problem(problem_task_cfg)
-    inspect(synthactic_problem)
+    #inspect(synthactic_problem)
 
-    algorithm_configurator_cfg = None
-    if algorithm_configurator_name == "smac":
-        algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
-        algorithm_configurator_cfg.outdir = "smac_out"
-    elif algorithm_configurator_name == "random":
-        algorithm_configurator_cfg = OmegaConf.load("config/randomsearch.yml")
+    # generate instances
+    mean = 0
+    std = 2
+    instance_generator = np.random.default_rng(seed=seed)
+    sampled_values = instance_generator.normal(loc=mean, scale=std, size=num_instances)
+
+    instance_map = {}
+    instances = []
+    for i in range(num_instances):
+        name = "i" + str(i)
+        instance_map[name] = sampled_values[i]
+        instances.append(name)
+    synthactic_problem.set_instances(instance_map)
+    synthactic_problem.loggers.append(PyExperimenterLogger(result_processor))
+
+    if algorithm_configurator_name in ["smac", "random", "irace"]:
+        algorithm_configurator_cfg = None
+        if algorithm_configurator_name == "smac":
+            algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
+            algorithm_configurator_cfg.outdir = "smac_out"
+            algorithm_configurator_cfg.optimizer.smac_cfg.scenario.instances = instances
+        elif algorithm_configurator_name == "random":
+            algorithm_configurator_cfg = OmegaConf.load("config/randomsearch.yml")
+        elif algorithm_configurator_name == "irace":
+            algorithm_configurator_cfg = OmegaConf.load("config/irace.yml")
 
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
-    algorithm_configurator_cfg.task.n_trials = 10
+    algorithm_configurator_cfg.task.n_trials = n_trials
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
-    inspect(algorithm_configurator)
 
     # obtain incumbent through running the optimizer
     # ToDo: How to access the optimization trace?
@@ -67,16 +137,20 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     f_min = synthactic_problem.f_min
     trial_info: TrialInfo = inc_tuple[0]
+    x_hat = np.array(list(trial_info.config.values()))
+    cost_hat = synthactic_problem.function._function(x_hat)
     trial_value: TrialValue = inc_tuple[1]
 
     res = {
-        "f_min": f_min,
-        "regret": trial_value.cost - f_min,
         "incumbent": str(trial_info.config),
-        "incumbent_cost": str(trial_value.cost),
+        "incumbent_cost": str(cost_hat),
         "incumbent_found_at": str(trial_value.virtual_time),
         "done": "true",
     }
+
+    if f_min is not None:
+        res["f_min"] = f_min
+        res["regret"] = str(cost_hat - f_min)
     print(res)
 
     result_processor.process_results(res)

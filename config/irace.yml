@@ -1,0 +1,6 @@
+# @package _global_
+optimizer_id: IRace
+optimizer_container_id: IRace
+optimizer:
+  _target_: synthacticbench.irace_optimizer.IRaceOptimizer
+  _partial_: true

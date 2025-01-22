@@ -26,3 +26,6 @@ class SynthACticBenchProblem(Problem):
     @property
     def f_min(self) -> float | None:
         return self.function.f_min
+
+    def set_instances(self, instances):
+        self.function.set_instances(instances)
