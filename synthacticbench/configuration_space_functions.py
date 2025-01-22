@@ -255,7 +255,7 @@ class MixedTypes(AbstractFunction):
         # add Categorical hyperparameters
         j = 0
         for j in range(math.floor(self.share_cat * self.dim)):
-            name = f"x_{i+j}"
+            name = f"x_{i + j}"
             group = self.rng.integers(low=3, high=21)
             self.groups.append(group)
             cs.add(Categorical(name=name, items=range(group), default=0))
@@ -264,25 +264,25 @@ class MixedTypes(AbstractFunction):
         # add Boolean hyperparameters
         j = 0
         for j in range(math.floor(self.share_bool * self.dim)):
-            name = f"x_{i+j}"
+            name = f"x_{i + j}"
             cs.add(Categorical(name=name, items=range(2), default=0))
         i += j + 1
 
         # add Integer hyperparameters
         j = 0
         for j in range(math.floor(self.share_int * self.dim)):
-            name = f"x_{i+j}"
+            name = f"x_{i + j}"
             cs.add(Integer(name=name, bounds=(-100, 100), default=0))
         i += j + 1
 
         # add Float hyperparameters
         for j in range(i, self.dim):
-            name = f"x_{i+j}"
+            name = f"x_{i + j}"
             cs.add(
                 Float(
                     bounds=(self.lower_bounds[j], self.upper_bounds[j]),
                     default=0.5,
-                    name=f"x_{i+j}",
+                    name=f"x_{i + j}",
                 )
             )
 
@@ -595,7 +595,7 @@ class HierarchicalStructures(AbstractFunction):
         assert groups * subgroups_per_group <= dim - 2, (
             "The total number of subgroups "
             f"(groups * subgroups_per_group = {groups * subgroups_per_group}) "
-            f"must not exceed the total number of non-categorical parameters ({dim-2}). "
+            f"must not exceed the total number of non-categorical parameters ({dim - 2}). "
         )
         self._x_min = None
         self.groups = groups
@@ -878,10 +878,10 @@ class InvalidParameterization(AbstractFunction):
                 self.instance.upper_bounds[i],
             ]
             argmin = np.argmin(
-                self.instance.get_value_in_single_dim(b[0]),
-                self.instance.get_value_in_single_dim(b[1]),
-                self.instance.get_value_in_single_dim(b[2]),
-                self.instance.get_value_in_single_dim(b[3]),
+                self.instance.get_value_in_single_dim(x=b[0], i=i),
+                self.instance.get_value_in_single_dim(x=b[1], i=i),
+                self.instance.get_value_in_single_dim(x=b[2], i=i),
+                self.instance.get_value_in_single_dim(x=b[3], i=i),
             )
             x_min[i] = b[argmin]
 
