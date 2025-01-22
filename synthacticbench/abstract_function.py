@@ -63,3 +63,18 @@ class AbstractFunction(Problem):
             Else, return None.
         """
         return None
+
+    @property
+    def f_min(self) -> np.ndarray | None:
+        """Return the function value of the configuration with the minimum function value.
+
+        Returns:
+        -------
+        np.ndarray | None
+            Point with minimum function value (if exists).
+            Else, return None.
+        """
+        return None
+
+    def _compute_regret(self, f_eval):
+        return np.abs(self.f_min - f_eval)

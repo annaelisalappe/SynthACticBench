@@ -184,8 +184,10 @@ class MultipleObjectives(AbstractFunction):
 
         if self.name.lower() == "zdt1":
             self.instance = ZDT1(dim, seed)
+            self.pareto_bound = np.array([1,0])
         elif self.name.lower() == "zdt3":
             self.instance = ZDT3(dim, seed)
+            self.pareto_bound = np.array([0.8518, -0.77336856])
 
         self._configspace = self.instance._create_config_space()
 
@@ -217,6 +219,37 @@ class MultipleObjectives(AbstractFunction):
     @property
     def f_min(self):
         return self.instance.f_min
+
+    def _compute_regret(self, f_evals: np.ndarray) -> float:
+        # compute hypervolume of fmins
+        sorted_fmins = self.f_min[np.argsort(self.f_min[:, 0])]
+        sorted_fmins = np.concatenate((sorted_fmins,np.expand_dims(self.pareto_bound, axis=0)))
+        ref_fmins = sorted_fmins.copy()  # Make a copy to avoid modifying the original
+        ref_fmins[:, 1] = np.array([1] * ref_fmins.shape[0])
+
+        hv_fmin = 0.0
+        for i, point in enumerate(sorted_fmins[:-1]):
+            width = sorted_fmins[i+1,0] - sorted_fmins[i,0]
+            height = ref_fmins[i,1] - sorted_fmins[i,1]
+            hv_fmin += width * height
+
+        if f_evals.ndim == 1:
+            f_evals = np.expand_dims(f_evals, axis=0)
+
+        sorted_fevals = f_evals[np.argsort(f_evals[:, 0])]
+        sorted_fevals = np.concatenate((sorted_fevals,np.expand_dims(self.pareto_bound, axis=0)))
+
+        ref_fmins = sorted_fevals.copy()
+        ref_fmins[:, 1] = np.array([1] * ref_fmins.shape[0])
+
+        hv_feval = 0.0
+        for i, point in enumerate(sorted_fevals[:-1]):
+            width = sorted_fevals[i + 1, 0] - sorted_fevals[i, 0]
+            height = ref_fmins[i, 1] - sorted_fevals[i, 1]
+            hv_feval += width * height
+
+        regret = np.abs(hv_fmin - hv_feval)
+        return regret
 
 
 class TimeDependentOP(AbstractFunction):

@@ -159,7 +159,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     if f_min is not None:
         res["f_min"] = f_min
-        res["regret"] = str(cost_hat - f_min)
+        res["regret"] = str(synthactic_problem.function._compute_regret(cost_hat))
     print(res)
 
     result_processor.process_results(res)
