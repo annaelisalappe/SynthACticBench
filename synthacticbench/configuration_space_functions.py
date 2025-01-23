@@ -841,7 +841,7 @@ class InvalidParameterization(AbstractFunction):
         for i in invalid:
             err_message += f"x_{i}: {x[i]}, "
 
-        raise Exception(err_message[:-1])
+        raise ValueError(err_message[:-1])
 
     def _check_hypercube(self, x: np.ndarray):
         invalid = []

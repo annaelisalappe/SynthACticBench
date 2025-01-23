@@ -9,6 +9,9 @@ from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
 
 
+class RightCensoredException(Exception):
+    pass
+
 class AbstractFunction(Problem):
     def __init__(
         self,
@@ -29,6 +32,8 @@ class AbstractFunction(Problem):
         self._instances = instances
 
     def _instance_offset(self, instance: str) -> float:
+        if instance is None:
+            return self._instances[self._instances.keys()[0]]
         return self._instances[instance]
 
     @property
@@ -44,6 +49,9 @@ class AbstractFunction(Problem):
         except (ValueError, TypeError):  # Replace with relevant exceptions
             cost = np.inf
             status = StatusType.CRASHED
+        except RightCensoredException:
+            cost = np.inf
+            status = StatusType.TIMEOUT
         instance = trial_info.instance
         inst_cost = cost + self._instance_offset(instance)
 

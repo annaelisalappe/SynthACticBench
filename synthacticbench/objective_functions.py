@@ -9,7 +9,7 @@ from ConfigSpace import (
 )
 from numpy import ndarray
 
-from synthacticbench.abstract_function import AbstractFunction
+from synthacticbench.abstract_function import AbstractFunction, RightCensoredException
 from synthacticbench.base_functions import (
     ZDT1,
     ZDT3,
@@ -17,7 +17,6 @@ from synthacticbench.base_functions import (
     Griewank,
     SumOfQ,
 )
-
 
 class DeterministicObjective(AbstractFunction):
     """
@@ -476,7 +475,7 @@ class CensoredObjective(AbstractFunction):
         # infinity instead of the true
         # function value to indicate that the evaluation was not successful
         if f_eval >= (self.f_min + 1e-8) * (1 + self.cutoff):
-            return float("inf")
+            raise RightCensoredException("Function value exceeds the censoring limit.")
 
         return f_eval
 
