@@ -117,7 +117,10 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     if algorithm_configurator_name in ["smac", "random", "irace"]:
         algorithm_configurator_cfg = None
         if algorithm_configurator_name == "smac":
-            algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
+            if scenario == "o3":
+                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac-moo.yml")
+            else:
+                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
             algorithm_configurator_cfg.outdir = "smac_out"
             algorithm_configurator_cfg.optimizer.smac_cfg.scenario.instances = instances
         elif algorithm_configurator_name == "random":
