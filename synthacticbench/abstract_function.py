@@ -33,7 +33,7 @@ class AbstractFunction(Problem):
 
     def _instance_offset(self, instance: str) -> float:
         if instance is None:
-            return self._instances[self._instances.keys()[0]]
+            return self._instances[list(self._instances.keys())[0]]
         return self._instances[instance]
 
     @property
