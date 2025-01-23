@@ -198,7 +198,7 @@ class ZDT1(AbstractFunction):
             f2 = 1 - np.sqrt(f1)
 
         # Stack f1 and f2 into the output array
-        return np.vstack((f1, f2)).T  # Shape (n, 2)
+        return [float(f1), float(f2)]
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -218,6 +218,9 @@ class ZDT1(AbstractFunction):
         """
         x = np.linspace(0, 1, 100)
         return np.array([x, 1 - np.sqrt(x)]).T
+
+
+
 
 
 class ZDT3(AbstractFunction):
@@ -262,8 +265,7 @@ class ZDT3(AbstractFunction):
         # Compute the second objective
         f2 = 1 - np.sqrt(f1 / g) - (f1 / g) * np.sin(10 * np.pi * f1)
 
-        # Stack f1 and f2 into the output array
-        return np.vstack((f1, f2)).T  # Shape (n, 2)
+        return [float(f1), float(f2)]
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -302,6 +304,8 @@ class ZDT3(AbstractFunction):
             pf.append(np.array([x1, x2]).T)
 
         return np.vstack(pf)
+
+
 
 
 class SumOfQ(AbstractFunction):
