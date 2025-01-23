@@ -232,9 +232,7 @@ class MultipleObjectives(AbstractFunction):
             height = ref_fmins[i,1] - sorted_fmins[i,1]
             hv_fmin += width * height
 
-        if f_evals.ndim == 1:
-            f_evals = np.expand_dims(f_evals, axis=0)
-
+        f_evals = np.expand_dims(np.array(f_evals),axis=0)
         sorted_fevals = f_evals[np.argsort(f_evals[:, 0])]
         sorted_fevals = np.concatenate((sorted_fevals,np.expand_dims(self.pareto_bound, axis=0)))
 

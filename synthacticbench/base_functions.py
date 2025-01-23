@@ -217,7 +217,7 @@ class ZDT1(AbstractFunction):
         For ZDT1, f1 = x1 and f2 = 1 - sqrt(f1) when the Pareto front is achieved.
         """
         x = np.linspace(0, 1, 100)
-        return np.array([x, 1 - np.sqrt(x)]).T
+        return np.round(np.array([x, 1 - np.sqrt(x)]).T,3)
 
 
 
@@ -303,7 +303,7 @@ class ZDT3(AbstractFunction):
             x2 = 1 - np.sqrt(x1) - x1 * np.sin(10 * np.pi * x1)
             pf.append(np.array([x1, x2]).T)
 
-        return np.vstack(pf)
+        return np.round(np.vstack(pf),3)
 
 
 
