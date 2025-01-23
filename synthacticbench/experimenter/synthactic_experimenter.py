@@ -69,14 +69,14 @@ class PyExperimenterLogger(AbstractLogger):
             exit()
 
     def log_incumbent(self, n_trials: int, incumbent: Incumbent) -> None:
-        if isinstance(incumbent[0], list):
+        if isinstance(incumbent[0], (list, tuple)):
             config_dict = dict(incumbent[0][0].config)
         else:
             config_dict = dict(incumbent[0].config)
         for key in config_dict.keys():
             if isinstance(config_dict[key], np.int64):
                 config_dict[key] = int(config_dict[key])
-        incumbent_cost = str(incumbent[0][1].cost) if isinstance(incumbent[0], list) \
+        incumbent_cost = str(incumbent[0][1].cost) if isinstance(incumbent[0], (list, tuple)) \
         else str(incumbent[1].cost)
         self.result_processor.process_logs({
             "incumbent_log": {
@@ -137,6 +137,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
     algorithm_configurator_cfg.task.n_trials = n_trials
+    algorithm_configurator_cfg.task.objectives= ['quality_0', 'quality_1']
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
 
@@ -149,13 +150,13 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     f_min = synthactic_problem.f_min
     trial_info: TrialInfo = inc_tuple[0]
-    x_hat = np.array(list(trial_info[0].config.values())) if isinstance(trial_info, list) \
+    x_hat = np.array(list(trial_info[0].config.values())) if isinstance(trial_info, (list, tuple)) \
         else np.array(list(trial_info.config.values()))
 
     cost_hat = synthactic_problem.function._function(x_hat)
     trial_value: TrialValue = inc_tuple[1]
 
-    config_dict = dict(trial_info[0].config) if isinstance(trial_info, list) \
+    config_dict = dict(trial_info[0].config) if isinstance(trial_info, (list, tuple)) \
         else dict(trial_info.config)
 
 
@@ -163,7 +164,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
         if isinstance(config_dict[key], np.int64):
             config_dict[key] = int(config_dict[key])
 
-    incumbent_found_at = str(trial_value[1].virtual_time) if isinstance(trial_value, list) \
+    incumbent_found_at = str(trial_value[1].virtual_time) if isinstance(trial_value, (list, tuple)) \
         else str(trial_value.virtual_time)
 
     res = {

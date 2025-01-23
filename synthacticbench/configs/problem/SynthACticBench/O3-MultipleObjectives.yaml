@@ -1,6 +1,6 @@
 # @package _global_
 benchmark_id: SynthACticBench
-problem_id: NoisyEvaluation
+problem_id: MultipleObjectives
 problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
@@ -13,7 +13,8 @@ task:
   n_workers: 1
   n_objectives: 2
   objectives:
-    - quality
+    - quality_0
+    - quality_1
   is_multifidelity: false
   fidelity_type: null
   min_budget: null

@@ -10,6 +10,7 @@ optimizer:
     scenario:
       seed: ${seed}
       n_trials: ${task.n_trials}
+      objectives: ${task.objectives}
       deterministic: true
       n_workers: 1
       instances: null
