@@ -7,7 +7,7 @@ Algorithm configurators are powerful tools for automatically optimizing algorith
 SynthACticBench addresses this by offering:
 
 * Ability-oriented evaluation: Each benchmark isolates a specific property of algorithm configuration problems, such as handling conditional parameters or navigating rugged fitness landscapes. Fig. 1 shows all of the capabilities that can be investigated with SynthACticBench.
-* Controlled and reproducible experiments: With transparent and synthetic benchmarks, you can systematically test configurators under well-defined conditions.
+* Controlled and reproducible experiments: With transparent and highly configurable benchmarks, you can systematically test configurators under well-defined conditions. Each benchmark is defined by a configuration file, in which can specify any parameter passed to the benchmark's unique function. For all benchmarks, you can freely set the dimensionality and the seed.
 
 ![Fig.1 Capabilities evaluated in SynthACticBench](https://github.com/user-attachments/assets/cb4c1651-5392-4b0a-8a51-d76ed65b14b2)
 -> TODO: Mit neuer Version updaten!
@@ -42,9 +42,9 @@ The command for running an optimizer, e.g., random search from carps on SynthACt
 python -m carps.run 'hydra.searchpath=[pkg://synthacticbench/configs]' +optimizer/randomsearch=config +problem/SynthACticBench=C5-ShiftingDomains
 ```
 The breakdown of the command:
-- `'hydra.searchpath=[pkg://synthacticbench/configs]'`: Let hydra know where to find the configs of the SynthACticBench package. For this, `synthactic` needs to be installed. In our case, this is: pkg://synthacticbench/configs. Every benchmark is defined in such a configuration file inside this folder. In this file you can specify the parameters for each function, set the seed, as well as the number of trials to run, etc. 
-- `+optimizer/randomsearch=config`: select an optimizer from `carps`. Follows the config folder structure in `carps`. Beware, for other optimizers you need to install dependencies (check the [repo](https://github.com/automl/CARP-S)). To reproduce the experiments we conducted in our initial study, please refer to the [SMAC](https://github.com/automl/SMAC3) installation instructions and the [iracepy-tiny](https://github.com/Saethox/iracepy-tiny/tree/master) installation instructions.
-- `+problem/SynthACticBench=C5-ShiftingDomains`: Select a problem. Follows the configs folder structure in this package, starting from `synthacticbench/configs`.
+- `'hydra.searchpath=[pkg://synthacticbench/configs]'`: Let hydra know where to find the configs of the SynthACticBench package. For this, `synthactic` needs to be installed. In our case, this is: pkg://synthacticbench/configs. 
+- `+optimizer/randomsearch=config`: select an optimizer from `carps`. Follows the config folder structure in `carps`. Beware, for other optimizers you need to install dependencies (check the [repo](https://github.com/automl/CARP-S)). To reproduce the experiments we conducted in our initial study, please refer to the [SMAC](https://github.com/automl/SMAC3) installation instructions and the [iracepy-tiny](https://github.com/Saethox/iracepy-tiny/tree/master) installation instructions. 
+- `+problem/SynthACticBench=C5-ShiftingDomains`: Select a problem. Follows the configs folder structure in this package, starting from `synthacticbench/configs`. Every benchmark is defined in a configuration file inside this folder. In this file you can specify the parameters for each function, set the seed, as well as the number of trials to run, etc. 
 
 Of course, you can also specify the run dir etc.
 For more hydra overrides and parallelization, check their [docs/tutorials](https://hydra.cc/docs/advanced/override_grammar/basic/).
