@@ -9,8 +9,7 @@ SynthACticBench addresses this by offering:
 * Ability-oriented evaluation: Each benchmark isolates a specific property of algorithm configuration problems, such as handling conditional parameters or navigating rugged fitness landscapes. Fig. 1 shows all of the capabilities that can be investigated with SynthACticBench.
 * Controlled and reproducible experiments: With transparent and highly configurable benchmarks, you can systematically test configurators under well-defined conditions. Each benchmark is defined by a configuration file, in which can specify any parameter passed to the benchmark's unique function. For all benchmarks, you can freely set the dimensionality and the seed.
 
-![Fig.1 Capabilities evaluated in SynthACticBench](https://github.com/user-attachments/assets/cb4c1651-5392-4b0a-8a51-d76ed65b14b2)
--> TODO: Mit neuer Version updaten!
+![Fig.1 Capabilities evaluated in SynthACticBench](https://github.com/user-attachments/files/18535620/synthactic.drawio.pdf)
 
 So this library provides a framework for answering questions like:
 
