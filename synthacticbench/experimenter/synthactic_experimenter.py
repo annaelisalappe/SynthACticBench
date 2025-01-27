@@ -139,7 +139,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
-    algorithm_configurator_cfg.task.n_trials = n_trials
+    algorithm_configurator_cfg.task.n_trials = 50 if algorithm_configurator_name == "random" else n_trials
     if scenario == "o3":
         algorithm_configurator_cfg.task.objectives= ['quality_0', 'quality_1']
 

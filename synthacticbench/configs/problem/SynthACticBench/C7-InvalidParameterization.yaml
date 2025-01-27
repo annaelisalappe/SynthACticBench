@@ -6,7 +6,7 @@ problem:
   function:
     _target_: synthacticbench.configuration_space_functions.InvalidParameterization
     dim: 10
-    cube_size: 0.2
+    cube_size: 0.25
     seed: 52
 task:
   n_trials: 100

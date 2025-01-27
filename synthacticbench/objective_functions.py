@@ -500,7 +500,7 @@ class Multimodal(AbstractFunction):
         self,
         dim: int,
         seed: int | None = None,
-        name: str | None = "ackley",
+        name: str | None = "griewank",
         loggers: list | None = None,
     ) -> None:
         """
@@ -551,7 +551,7 @@ class SinglePeak(AbstractFunction):
     def __init__(
         self,
         dim: int,
-        peak_width: float = 0.01,
+        peak_width: float = 0.25,
         seed: int | None = None,
         loggers: list | None = None,
     ) -> None:

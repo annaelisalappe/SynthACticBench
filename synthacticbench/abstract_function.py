@@ -85,4 +85,4 @@ class AbstractFunction(Problem):
         return None
 
     def _compute_regret(self, f_eval):
-        return np.abs(self.f_min - f_eval)
+        return float(np.abs(self.f_min - f_eval))
