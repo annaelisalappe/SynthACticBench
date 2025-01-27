@@ -18,7 +18,8 @@ from synthacticbench.abstract_function import RightCensoredException
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
-base_path = "synthacticbench/configs/problem/SynthACticBench/"
+base_path = "../../synthacticbench/configs/problem/SynthACticBench/"
+
 scenario_paths = {
     "c1": base_path + "C1-RelevantParameters.yaml",
     "c2-ackley": base_path + "C2-ParameterInteractions-ackley.yaml",
@@ -124,16 +125,17 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
         algorithm_configurator_cfg = None
         if algorithm_configurator_name == "smac":
             if scenario == "o3":
-                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac-moo.yml")
+                algorithm_configurator_cfg = OmegaConf.load("../../config/smac20-ac-moo.yml")
             else:
-                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
+                algorithm_configurator_cfg = OmegaConf.load("../../config/smac20-ac.yml")
             algorithm_configurator_cfg.outdir = "smac_out"
             algorithm_configurator_cfg.optimizer.smac_cfg.scenario.instances = instances
         elif algorithm_configurator_name == "random":
-            algorithm_configurator_cfg = OmegaConf.load("config/randomsearch.yml")
+            algorithm_configurator_cfg = OmegaConf.load("../../config/randomsearch.yml")
         elif algorithm_configurator_name == "irace":
-            algorithm_configurator_cfg = OmegaConf.load("config/irace.yml")
+            algorithm_configurator_cfg = OmegaConf.load("../../config/irace.yml")
             algorithm_configurator_cfg.instances = instances
+
 
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
@@ -143,6 +145,15 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
 
+    #for attr in dir(algorithm_configurator_cfg):
+    #    print("obj.%s = %r" % (attr, getattr(algorithm_configurator_cfg, attr)))
+
+    #inspect(algorithm_configurator_cfg)
+    #print("INSPEECTION FINSIHED")
+
+    #for attr in dir(algorithm_configurator):
+    #    print("obj.%s = %r" % (attr, getattr(algorithm_configurator, attr)))
+
     if algorithm_configurator_name == "irace":
         algorithm_configurator.set_instances(instances)
 
@@ -151,6 +162,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     inc_tuple = algorithm_configurator.run()
 
     f_min = synthactic_problem.f_min
+    print("FMIN ", f_min)
     trial_info: TrialInfo = inc_tuple[0]
     x_hat = np.array(list(trial_info[0].config.values())) if isinstance(trial_info, (list, tuple)) \
         else np.array(list(trial_info.config.values()))
@@ -181,8 +193,10 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     }
 
     if f_min is not None:
-        res["f_min"] = f_min
+        res["f_min"] = float(f_min)
         res["regret"] = str(synthactic_problem.function._compute_regret(cost_hat))
+    print(80*"==")
+    print("RES")
     print(res)
 
     result_processor.process_results(res)
