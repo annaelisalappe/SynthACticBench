@@ -13,6 +13,7 @@ from py_experimenter.result_processor import ResultProcessor
 from rich import inspect
 import numpy as np
 
+from synthacticbench.abstract_function import RightCensoredException
 
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
@@ -137,7 +138,8 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     algorithm_configurator_cfg.merge_with(problem_task_cfg)
     algorithm_configurator_cfg.seed = seed
     algorithm_configurator_cfg.task.n_trials = n_trials
-    algorithm_configurator_cfg.task.objectives= ['quality_0', 'quality_1']
+    if scenario == "o3":
+        algorithm_configurator_cfg.task.objectives= ['quality_0', 'quality_1']
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
 
@@ -153,7 +155,11 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     x_hat = np.array(list(trial_info[0].config.values())) if isinstance(trial_info, (list, tuple)) \
         else np.array(list(trial_info.config.values()))
 
-    cost_hat = synthactic_problem.function._function(x_hat)
+    try:
+        cost_hat = synthactic_problem.function._function(x_hat)
+    except (ValueError, TypeError, RightCensoredException):
+        cost_hat = np.inf
+
     trial_value: TrialValue = inc_tuple[1]
 
     config_dict = dict(trial_info[0].config) if isinstance(trial_info, (list, tuple)) \

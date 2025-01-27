@@ -304,6 +304,13 @@ class MixedTypes(AbstractFunction):
         # query base function for transformed x
         return self.instance._function(x)
 
+    @property
+    def x_min(self) -> np.ndarray | None:
+        return self.instance.x_min
+
+    @property
+    def f_min(self):
+        return self.instance.f_min
 
 class ActivationStructures(AbstractFunction):
     """
@@ -856,7 +863,7 @@ class InvalidParameterization(AbstractFunction):
         Evaluates the minimal value of this benchmark's function. If the minimum x value of any
         of the parameters lie withing the hypercube, that parameter's quadratic function is
         evaluated at its bounds and at the edges of the hypercube to find the smallest value
-        where x is a valid parameterisation.
+        where x is a valid parameterization.
         """
         if self.x_min_computed:
             return self._x_min
