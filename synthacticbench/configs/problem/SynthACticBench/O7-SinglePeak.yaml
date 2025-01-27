@@ -6,7 +6,7 @@ problem:
   function:
     _target_: synthacticbench.objective_functions.SinglePeak
     dim: 10
-    peak_width: 0.001
+    peak_width: 0.25
     seed: 52
 task:
   n_trials: 100
