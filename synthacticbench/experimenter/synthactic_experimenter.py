@@ -18,7 +18,7 @@ from synthacticbench.abstract_function import RightCensoredException
 EXP_CONFIG_FILE_PATH = "config/experiment_config.yml"
 DB_CRED_FILE_PATH = "config/database_cred.yml"
 
-base_path = "../../synthacticbench/configs/problem/SynthACticBench/"
+base_path = "synthacticbench/configs/problem/SynthACticBench/"
 
 scenario_paths = {
     "c1": base_path + "C1-RelevantParameters.yaml",
@@ -125,15 +125,15 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
         algorithm_configurator_cfg = None
         if algorithm_configurator_name == "smac":
             if scenario == "o3":
-                algorithm_configurator_cfg = OmegaConf.load("../../config/smac20-ac-moo.yml")
+                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac-moo.yml")
             else:
-                algorithm_configurator_cfg = OmegaConf.load("../../config/smac20-ac.yml")
+                algorithm_configurator_cfg = OmegaConf.load("config/smac20-ac.yml")
             algorithm_configurator_cfg.outdir = "smac_out"
             algorithm_configurator_cfg.optimizer.smac_cfg.scenario.instances = instances
         elif algorithm_configurator_name == "random":
-            algorithm_configurator_cfg = OmegaConf.load("../../config/randomsearch.yml")
+            algorithm_configurator_cfg = OmegaConf.load("config/randomsearch.yml")
         elif algorithm_configurator_name == "irace":
-            algorithm_configurator_cfg = OmegaConf.load("../../config/irace.yml")
+            algorithm_configurator_cfg = OmegaConf.load("config/irace.yml")
             algorithm_configurator_cfg.instances = instances
 
 
