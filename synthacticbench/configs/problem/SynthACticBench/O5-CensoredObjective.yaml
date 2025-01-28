@@ -5,7 +5,7 @@ problem:
   _target_: synthacticbench.synthacticbench_problem.SynthACticBenchProblem
   function:
     _target_: synthacticbench.objective_functions.CensoredObjective
-    cutoff: 0.6
+    cutoff: 0.8
     wrapped_bench:
       _target_: synthacticbench.objective_functions.NoisyEvaluation
       dim: 10
