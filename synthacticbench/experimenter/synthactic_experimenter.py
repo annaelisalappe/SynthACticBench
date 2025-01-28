@@ -193,7 +193,7 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     }
 
     if f_min is not None:
-        res["f_min"] = float(f_min)
+        res["f_min"] = float(f_min) if scenario != 'o3' else f_min
         res["regret"] = str(synthactic_problem.function._compute_regret(cost_hat))
     print(80*"==")
     print("RES")

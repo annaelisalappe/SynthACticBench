@@ -472,7 +472,8 @@ class CensoredObjective(AbstractFunction):
         # if the function value is more that cutoff percent worse than the minimum, return
         # infinity instead of the true
         # function value to indicate that the evaluation was not successful
-        if f_eval >= (self.f_min + 1e-8) * (1 + self.cutoff):
+        dist = np.abs(self.f_min - f_eval)
+        if dist >= np.abs((self.f_min + 1e-8) * self.cutoff):
             raise RightCensoredException("Function value exceeds the censoring limit.")
 
         return f_eval
