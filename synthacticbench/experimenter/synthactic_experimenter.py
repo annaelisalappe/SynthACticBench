@@ -141,7 +141,9 @@ def run_config(config: dict, result_processor: ResultProcessor, custom_config: d
     algorithm_configurator_cfg.seed = seed
     algorithm_configurator_cfg.task.n_trials = 50 if algorithm_configurator_name == "random" else n_trials
     if scenario == "o3":
-        algorithm_configurator_cfg.task.objectives= ['quality_0', 'quality_1']
+        algorithm_configurator_cfg.task.objectives = ['quality_0', 'quality_1']
+    if scenario == "o1" and algorithm_configurator_name == "smac":
+        algorithm_configurator_cfg.task.deterministic = True
 
     algorithm_configurator = make_optimizer(algorithm_configurator_cfg, synthactic_problem)
 
