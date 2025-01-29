@@ -33,6 +33,8 @@ class AbstractFunction(Problem):
 
     def _instance_offset(self, instance: str) -> float:
         if instance is None:
+            if self._instances is None:
+                self._init_instances_default()
             return self._instances[list(self._instances.keys())[0]]
         return self._instances[instance]
 
@@ -86,3 +88,17 @@ class AbstractFunction(Problem):
 
     def _compute_regret(self, f_eval):
         return float(np.abs(self.f_min - f_eval))
+
+    def _init_instances_default(self):
+        num_instances = 500
+        mean = 0
+        std = 2
+        instance_generator = np.random.default_rng(seed=self.seed)
+        sampled_values = instance_generator.normal(loc=mean, scale=std, size=num_instances)
+        instance_map = {}
+        instances = []
+        for i in range(num_instances):
+            name = "i" + str(i)
+            instance_map[name] = sampled_values[i]
+            instances.append(name)
+        self.set_instances(instance_map)
