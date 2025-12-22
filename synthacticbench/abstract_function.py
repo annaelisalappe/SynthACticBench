@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from carps.benchmarks.problem import Problem
+from carps.objective_functions.objective_function import ObjectiveFunction
 from carps.loggers.abstract_logger import AbstractLogger
 from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
@@ -12,7 +12,7 @@ from ConfigSpace import ConfigurationSpace
 class RightCensoredException(Exception):
     pass
 
-class AbstractFunction(Problem):
+class AbstractFunction(ObjectiveFunction):
     def __init__(
         self,
         seed: int,

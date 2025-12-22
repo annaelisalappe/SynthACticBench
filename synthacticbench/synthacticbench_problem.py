@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from carps.benchmarks.problem import Problem
+from carps.objective_functions.objective_function import ObjectiveFunction
 from carps.loggers.abstract_logger import AbstractLogger
 from carps.utils.trials import TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
@@ -8,7 +8,7 @@ from ConfigSpace import ConfigurationSpace
 from synthacticbench.abstract_function import AbstractFunction
 
 
-class SynthACticBenchProblem(Problem):
+class SynthACticBenchProblem(ObjectiveFunction):
     def __init__(
         self, function: AbstractFunction, loggers: list[AbstractLogger] | None = None
     ) -> None:
