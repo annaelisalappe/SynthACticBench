@@ -58,7 +58,9 @@ class AbstractFunction(ObjectiveFunction):
         instance = trial_info.instance
         inst_cost = cost + self._instance_offset(instance)
 
-        return TrialValue(cost=[float(c) for c in inst_cost], status=status)
+        cost = inst_cost if isinstance(inst_cost, float) else [float(c) for c in inst_cost]
+
+        return TrialValue(cost=cost, status=status)
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         ...
