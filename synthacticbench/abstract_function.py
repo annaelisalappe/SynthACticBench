@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from carps.objective_functions.objective_function import ObjectiveFunction
 from carps.loggers.abstract_logger import AbstractLogger
+from carps.objective_functions.objective_function import ObjectiveFunction
 from carps.utils.trials import StatusType, TrialInfo, TrialValue
 from ConfigSpace import ConfigurationSpace
 
@@ -48,7 +48,8 @@ class AbstractFunction(ObjectiveFunction):
         try:
             cost = self._function(x=x)
             status = StatusType.SUCCESS
-        except (ValueError, TypeError):  # Replace with relevant exceptions
+        except (ValueError, TypeError) as e:  # Replace with relevant exceptions
+            raise e
             cost = np.inf
             status = StatusType.CRASHED
         except RightCensoredException:
@@ -57,7 +58,7 @@ class AbstractFunction(ObjectiveFunction):
         instance = trial_info.instance
         inst_cost = cost + self._instance_offset(instance)
 
-        return TrialValue(cost=inst_cost, status=status)
+        return TrialValue(cost=[float(c) for c in inst_cost], status=status)
 
     def _function(self, x: np.ndarray) -> np.ndarray:
         ...

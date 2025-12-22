@@ -198,7 +198,9 @@ class ZDT1(AbstractFunction):
             f2 = 1 - np.sqrt(f1)
 
         # Stack f1 and f2 into the output array
-        return [float(f1), float(f2)]
+        assert len(f1) == 1
+        assert len(f2) == 1
+        return np.concat((f1,f2))
 
     @property
     def x_min(self) -> np.ndarray | None:
@@ -265,7 +267,9 @@ class ZDT3(AbstractFunction):
         # Compute the second objective
         f2 = 1 - np.sqrt(f1 / g) - (f1 / g) * np.sin(10 * np.pi * f1)
 
-        return [float(f1), float(f2)]
+        assert len(f1) == 1
+        assert len(f2) == 1
+        return np.concat((f1,f2))
 
     @property
     def x_min(self) -> np.ndarray | None:
